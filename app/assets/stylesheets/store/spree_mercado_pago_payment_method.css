@@ -1,3 +1,8 @@
-/*
- *= require store/spree_core
-*/
+button.mercado_pago_button {
+    background-color: inherit;
+    margin-top: 20px;
+}
+
+button.mercado_pago_button:hover {
+    background-color: #00adee;
+}

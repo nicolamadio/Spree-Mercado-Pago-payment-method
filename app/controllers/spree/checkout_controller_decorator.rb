@@ -18,7 +18,7 @@ Spree::CheckoutController.class_eval do
       }
 
       m = SpreeMercadoPagoClient.new(@order, back_urls)
-      
+
       if m.authenticate && m.send_data
         redirect_to m.redirect_url
       else
