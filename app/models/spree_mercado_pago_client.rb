@@ -12,11 +12,12 @@ class SpreeMercadoPagoClient
   attr_reader :auth_response
   attr_reader :preferences_response
 
-  def initialize(order, callbacks)
+  def initialize(order, callbacks, options={})
     unless callbacks[:success] && callbacks[:pending] && callbacks[:failure]
       raise "Url callbacks where not specified"
     end
 
+    @api_options = options.clone
     @order = order
     @callbacks = callbacks
     @errors = []
@@ -28,7 +29,7 @@ class SpreeMercadoPagoClient
 
     if response.code != 200
       @auth_response = nil
-      @errors << I18n.t(:mp_authentication_error) 
+      @errors << I18n.t(:mp_authentication_error)
     else
       @errors = []
       @auth_response = ActiveSupport::JSON.decode(response)
@@ -52,7 +53,10 @@ class SpreeMercadoPagoClient
   end
 
   def redirect_url
-    @preferences_response["init_point"] if @preferences_response.present?
+    point_key = ( if sandbox then 'sandbox_init_point' else 'init_point' end)
+
+    @preferences_response[point_key] if @preferences_response.present?
+
   end
 
   private
@@ -78,7 +82,11 @@ class SpreeMercadoPagoClient
   def mp_preferences_url(token)
     "https://api.mercadolibre.com/checkout/preferences?access_token=#{token}"
   end
-  
+
+  def sandbox
+    @api_options[:sandbox]
+  end
+
   def config_options
     @options = Hash.new
     @options[:external_reference] = @order.number
@@ -89,7 +97,7 @@ class SpreeMercadoPagoClient
     }
     @options[:items] = Array.new
 
-    @order.line_items.each do |li| 
+    @order.line_items.each do |li|
       h = {
         :title => line_item_description(li.variant),
         :unit_price => li.price.to_f,

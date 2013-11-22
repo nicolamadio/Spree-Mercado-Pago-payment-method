@@ -7,7 +7,7 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
   preference :success_url, :string, default: ''
   preference :failure_url, :string, default: ''
   preference :pending_url, :string, default: ''
-  preference :sanbox, :boolean, default: true
+  preference :sandbox, :boolean, default: true
 
   def payment_profiles_supported?
     false

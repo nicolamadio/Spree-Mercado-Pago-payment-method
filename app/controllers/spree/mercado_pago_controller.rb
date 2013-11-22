@@ -34,8 +34,9 @@ module Spree
           pending: pending_url,
           failure: failure_url,
       }
+      options = {sandbox: @payment_method.preferred_sandbox}
 
-      mercado_pago_client = SpreeMercadoPagoClient.new(@current_order, back_urls)
+      mercado_pago_client = SpreeMercadoPagoClient.new(@current_order, back_urls, options)
 
       if mercado_pago_client.authenticate && mercado_pago_client.send_data
         redirect_to mercado_pago_client.redirect_url
@@ -58,11 +59,7 @@ module Spree
     end
 
     def create_payment
-      @current_order.payments.create!({
-                                 :source => @payment_method,
-                                 :amount => @current_order.total,
-                                 :payment_method => @payment_method
-                             })
+      @current_order.payments.create!({:source => @payment_method, :amount => @current_order.total, :payment_method => @payment_method})
     end
   end
 end
