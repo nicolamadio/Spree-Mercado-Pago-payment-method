@@ -1,9 +1,13 @@
 # -*- encoding : utf-8 -*-
 class PaymentMethod::MercadoPago < Spree::PaymentMethod
-  attr_reader :preferred_client_id, :preferred_client_secret
 
-  preference :client_id,     :integer
+  preference :client_id, :string
   preference :client_secret, :string
+  preference :server, :string, default: 'sandbox'
+  preference :mode, :string, default: 'modal'
+  preference :success_url, :string, default: ''
+  preference :failure_url, :string, default: ''
+  preference :pending_url, :string, default: ''
 
   def payment_profiles_supported?
     false
