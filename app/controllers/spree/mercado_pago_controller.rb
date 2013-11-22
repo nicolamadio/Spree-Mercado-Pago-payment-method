@@ -4,6 +4,8 @@ require 'rest_client'
 module Spree
   class MercadoPagoController < Spree::StoreController
     before_filter :check_state, only: [:success, :pending]
+    before_filter :get_payment_method, only: [:payment]
+    before_filter :create_payment, only: [:payment]
 
     def success
       current_order.next
@@ -18,8 +20,6 @@ module Spree
 
     def payment
       return unless current_order.payment?
-      selected_method_id = params[:payment_method_id]
-      @payment_method = Spree::PaymentMethod.find(selected_method_id)
 
       success_url = @payment_method.preferred_success_url
       pending_url = @payment_method.preferred_pending_url
@@ -47,9 +47,22 @@ module Spree
 
     private
 
+    def get_payment_method
+      selected_method_id = params[:payment_method_id]
+      @payment_method = Spree::PaymentMethod.find(selected_method_id)
+    end
+
     def check_state
       flash[:error] = "Check checkout success"
       redirect_to failure
+    end
+
+    def create_payment
+      @current_order.payments.create!({
+                                 :source => @payment_method,
+                                 :amount => @current_order.total,
+                                 :payment_method => @payment_method
+                             })
     end
   end
 end
