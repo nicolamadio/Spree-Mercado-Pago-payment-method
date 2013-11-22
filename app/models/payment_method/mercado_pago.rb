@@ -3,11 +3,11 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
 
   preference :client_id, :string
   preference :client_secret, :string
-  preference :server, :string, default: 'sandbox'
   preference :mode, :string, default: 'modal'
   preference :success_url, :string, default: ''
   preference :failure_url, :string, default: ''
   preference :pending_url, :string, default: ''
+  preference :sanbox, :boolean, default: true
 
   def payment_profiles_supported?
     false

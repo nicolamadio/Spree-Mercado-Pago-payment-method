@@ -5,6 +5,6 @@
     MercadoPago.paymentMethodID = "<%= payment_method.id %>"
 </script>
 
-<% image = tag("img", src: "https://a248.e.akamai.net/secure.mlstatic.com/components/resources/mp/css/assets/desktop-logo-mercadopago.png") %>
-<%= button_tag(image, action: :update_checkout, class: :mercado_pago_button ) %>
+
+<%= link_to(image_tag("https://a248.e.akamai.net/secure.mlstatic.com/components/resources/mp/css/assets/desktop-logo-mercadopago.png"), mercado_pago_payment_url(:payment_method_id => payment_method.id), :method => :post, :id => "mercado_pago_button", class: :mercado_pago_button) %>
 

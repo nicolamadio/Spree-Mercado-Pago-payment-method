@@ -1,8 +1,8 @@
-button.mercado_pago_button {
+a.mercado_pago_button img {
     background-color: inherit;
     margin-top: 20px;
 }
 
-button.mercado_pago_button:hover {
+a.mercado_pago_button img:hover {
     background-color: #00adee;
 }
