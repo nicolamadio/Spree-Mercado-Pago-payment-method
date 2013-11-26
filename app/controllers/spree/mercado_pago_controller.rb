@@ -56,7 +56,7 @@ module Spree
     end
 
     def check_state
-      flash[:info] = 'Check checkout success'
+      ActiveSupport::Deprecation.warn 'We should check the state before mark as success/pending', caller
     end
 
     def create_payment
