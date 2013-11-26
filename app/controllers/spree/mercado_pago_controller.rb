@@ -37,6 +37,14 @@ module Spree
           failure: failure_url,
       }
       options = {sandbox: @payment_method.preferred_sandbox, payment: @mp_payment}
+      user = spree_current_user
+
+      if user
+        email = user.email
+      else
+        email = current_order.email
+      end
+      options[:payer] = {email:email}
 
       mercado_pago_client = SpreeMercadoPagoClient.new(@current_order, back_urls, options)
 
@@ -60,7 +68,7 @@ module Spree
     end
 
     def create_payment
-      @mp_payment = @current_order.payments.create!({:source => @payment_method, :amount => @current_order.total, :payment_method => @payment_method})
+      @mp_payment = current_order.payments.create!({:source => @payment_method, :amount => @current_order.total, :payment_method => @payment_method})
     end
   end
 end

@@ -102,6 +102,10 @@ class SpreeMercadoPagoClient
     }
     @options[:items] = Array.new
 
+    payer_options = @api_options[:payer]
+
+    @options[:payer] = payer_options if payer_options
+
     @order.line_items.each do |li|
       h = {
         :title => line_item_description_text(li.variant.product.description),
