@@ -61,9 +61,6 @@ class SpreeMercadoPagoClient
 
   private
   def send_authentication_request
-    client_id     = @order.payments.last.payment_method.preferred_client_id
-    client_secret = @order.payments.last.payment_method.preferred_client_secret
-
     response = RestClient.post(
       'https://api.mercadolibre.com/oauth/token',
       {:grant_type => 'client_credentials', :client_id => client_id, :client_secret => client_secret},
@@ -79,6 +76,14 @@ class SpreeMercadoPagoClient
     )
   end
 
+  def client_id
+    @api_options[:payment].payment_method.preferred_client_id
+  end
+
+  def client_secret
+    @api_options[:payment].payment_method.preferred_client_secret
+  end
+
   def mp_preferences_url(token)
     "https://api.mercadolibre.com/checkout/preferences?access_token=#{token}"
   end
@@ -89,7 +94,7 @@ class SpreeMercadoPagoClient
 
   def config_options
     @options = Hash.new
-    @options[:external_reference] = @order.number
+    @options[:external_reference] = @api_options[:payment].id
     @options[:back_urls] = {
       :success => @callbacks[:success],
       :pending => @callbacks[:pending],

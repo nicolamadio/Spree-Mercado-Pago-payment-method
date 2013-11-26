@@ -30,6 +30,10 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
     ActiveMerchant::Billing::Response.new(true, "", {}, {})
   end
 
+  def purchase(amount, source, gateway_options)
+    ActiveMerchant::Billing::Response.new(true, "", {}, {})
+  end
+
   def capture(*args)
     ActiveMerchant::Billing::Response.new(true, "", {}, {})
   end
