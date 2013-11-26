@@ -104,7 +104,7 @@ class SpreeMercadoPagoClient
 
     @order.line_items.each do |li|
       h = {
-        :title => line_item_description(li.variant),
+        :title => line_item_description_text(li.variant.product.description),
         :unit_price => li.price.to_f,
         :quantity => li.quantity,
         :currency_id => "ARS"
