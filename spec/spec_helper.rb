@@ -1,19 +1,6 @@
 require 'rubygems'
-require 'spork'
 #uncomment the following line to use spork with the debugger
 #require 'spork/ext/ruby-debug'
-
-Spork.prefork do
-  # Loading more in this block will cause your tests to run faster. However,
-  # if you change any configuration or code from libraries loaded here, you'll
-  # need to restart spork for it take effect.
-
-end
-
-Spork.each_run do
-  # This code will be run each time you run your specs.
-
-end
 
 # --- Instructions ---
 # Sort the contents of this file into a Spork.prefork and a Spork.each_run
@@ -58,38 +45,20 @@ require 'ffaker'
 Dir[File.join(File.dirname(__FILE__), 'support/**/*.rb')].each { |f| require f }
 
 # Requires factories defined in spree_core
-require 'spree/core/testing_support/factories'
-# require 'spree/core/testing_support/env'
-require 'spree/core/testing_support/controller_requests'
-require 'spree/core/testing_support/authorization_helpers'
-require 'spree/core/url_helpers'
+require 'spree/testing_support/factories'
+require 'spree/testing_support/controller_requests'
+require 'spree/testing_support/authorization_helpers'
+require 'spree/testing_support/url_helpers'
+
 
 RSpec.configure do |config|
   config.include FactoryGirl::Syntax::Methods
-  config.include Spree::Core::TestingSupport::ControllerRequests, :type => :controller
+  config.include Spree::TestingSupport::UrlHelpers
+  config.include Spree::TestingSupport::AuthorizationHelpers::Controller
 
-  # == URL Helpers
-  #
-  # Allows access to Spree's routes in specs:
-  #
-  # visit spree.admin_path
-  # current_path.should eql(spree.products_path)
-  config.include Spree::Core::UrlHelpers
-
-  # == Mock Framework
-  #
-  # If you prefer to use mocha, flexmock or RR, uncomment the appropriate line:
-  #
-  # config.mock_with :mocha
-  # config.mock_with :flexmock
-  # config.mock_with :rr
   config.mock_with :rspec
+  config.color = true
+  config.use_transactional_fixtures = false
 
-  # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
-  config.fixture_path = "#{::Rails.root}/spec/fixtures"
-
-  # If you're not using ActiveRecord, or you'd prefer not to run each of your
-  # examples within a transaction, remove the following line or assign false
-  # instead of true.
-  config.use_transactional_fixtures = true
+  config.fail_fast = ENV['FAIL_FAST'] || false
 end
