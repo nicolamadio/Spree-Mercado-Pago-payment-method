@@ -8,11 +8,11 @@ module Spree
     before_filter :create_payment, only: [:payment]
 
     def success
-      current_order.next
+      @current_order.next
     end
 
     def pending
-      current_order.next
+      @current_order.payments.last.pend
     end
 
     def failure
@@ -54,8 +54,7 @@ module Spree
     end
 
     def check_state
-      flash[:error] = "Check checkout success"
-      redirect_to failure
+      flash[:info] = 'Check checkout success'
     end
 
     def create_payment

@@ -17,14 +17,17 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
     %w{capture void}
   end
 
-  # Indicates whether its possible to capture the payment
-  def can_capture?(payment)
-    ['checkout', 'pending'].include?(payment.state)
-  end
-
   # Indicates whether its possible to void the payment.
   def can_void?(payment)
     payment.state != 'void'
+  end
+
+  def auto_capture?
+    false
+  end
+
+  def authorize(amount, source, gateway_options)
+    ActiveMerchant::Billing::Response.new(true, "", {}, {})
   end
 
   def capture(*args)
