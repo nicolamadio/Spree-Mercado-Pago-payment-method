@@ -5,7 +5,7 @@ gem 'spree_auth_devise', :git => 'https://github.com/spree/spree_auth_devise.git
 
 
 group :test do
-  gem "spork"
+  gem 'guard-rspec'
   gem 'capybara'
 end
 
