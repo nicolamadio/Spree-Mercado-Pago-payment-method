@@ -1,6 +1,10 @@
 # -*- encoding : utf-8 -*-
 require 'rest_client'
 
+
+class MercadoPagoException < Exception
+end
+
 class SpreeMercadoPagoClient
   # These three includes are because of the user of line_item_description from
   # ProductsHelper
@@ -12,15 +16,17 @@ class SpreeMercadoPagoClient
   attr_reader :auth_response
   attr_reader :preferences_response
 
-  def initialize(order, callbacks, options={})
-    unless callbacks[:success] && callbacks[:pending] && callbacks[:failure]
-      raise "Url callbacks where not specified"
-    end
+  def initialize(order, payment_method, success_callback, 
+    pending_callback, failure_callback, options={})
 
+    @payment_method = payment_method
     @api_options = options.clone
     @order = order
-    @callbacks = callbacks
     @errors = []
+    
+    @success_callback = success_callback
+    @pending_callback = pending_callback
+    @failure_callback = failure_callback
     config_options
   end
 
@@ -28,8 +34,10 @@ class SpreeMercadoPagoClient
     response = send_authentication_request
 
     if response.code != 200
-      @auth_response = nil
       @errors << I18n.t(:mp_authentication_error)
+      raise MercadoPagoException.new 
+
+      
     else
       @errors = []
       @auth_response = ActiveSupport::JSON.decode(response)
@@ -77,11 +85,11 @@ class SpreeMercadoPagoClient
   end
 
   def client_id
-    @api_options[:payment].payment_method.preferred_client_id
+    @payment_method.preferred_client_id
   end
 
   def client_secret
-    @api_options[:payment].payment_method.preferred_client_secret
+    @payment_method.preferred_client_secret
   end
 
   def mp_preferences_url(token)
@@ -94,11 +102,11 @@ class SpreeMercadoPagoClient
 
   def config_options
     @options = Hash.new
-    @options[:external_reference] = @api_options[:payment].id
+    @options[:external_reference] = @payment_method.id
     @options[:back_urls] = {
-      :success => @callbacks[:success],
-      :pending => @callbacks[:pending],
-      :failure => @callbacks[:failure]
+      :success => @success_callback,
+      :pending => @pending_callback,
+      :failure => @failure_callback
     }
     @options[:items] = Array.new
 

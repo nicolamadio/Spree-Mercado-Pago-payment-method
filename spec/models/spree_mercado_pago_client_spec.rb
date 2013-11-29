@@ -12,10 +12,11 @@ describe SpreeMercadoPagoClient do
     )
   end
 
+
   let(:order) { double("order", :payment_method => payment_method, :number => "testorder", :line_items => []) }
   let(:url_callbacks) { {success: "url", failure: "url", pending: "url"} }
-  let(:client) { SpreeMercadoPagoClient.new(order, url_callbacks) }
-
+  
+  let(:payment_method) { double :payment_method, id: 1, preferred_client_id:"app id", preferred_client_secret: "app secret" }
   let(:login_json_response)  do
     File.open("#{SPEC_ROOT}/fixtures/authenticated.json", "r").read
   end
@@ -24,22 +25,16 @@ describe SpreeMercadoPagoClient do
     File.open("#{SPEC_ROOT}/fixtures/preferences_created.json", "r").read
   end
 
-  describe "#initialize" do
-    it "raises error if initialized without callbacks" do
-      expect {
-        SpreeMercadoPagoClient.new(order, {})
-      }.to raise_error
-    end
+  let(:client) {SpreeMercadoPagoClient.new(order, payment_method, url_callbacks[:success], url_callbacks[:pending], url_callbacks[:failure] )}
 
-    it "doesn't raise error with all callbacks" do
-      expect {
-        SpreeMercadoPagoClient.new(order, url_callbacks)
-      }.not_to raise_error
+  describe "#initialize" do
+
+    it "doesn't raise error with all params" do
+      expect {client}.not_to raise_error
     end
   end
 
   describe "#authenticate" do
-
     context "On success" do
       before(:each) do
         response = double("response")
@@ -49,7 +44,7 @@ describe SpreeMercadoPagoClient do
       end
 
       it "returns truthy value" do
-        client.authenticate.should be_true
+        client.authenticate.should_not be_nil
       end
 
       it "#errors returns empty array" do
@@ -73,13 +68,10 @@ describe SpreeMercadoPagoClient do
 
       before { RestClient.should_receive(:post) { bad_request_response } }
 
-      it "returns falsy value on invalid authentication" do
-        client.authenticate.should be_false
-      end
-
-      it "populates #errors returns array of errors" do
-        client.authenticate
-        client.errors.should include(I18n.t(:mp_authentication_error))
+      it "raise exception on invalid authentication" do
+        expect { client.authenticate }.to raise_error(MercadoPagoException) do |error|
+          client.errors.should include(I18n.t(:mp_authentication_error))
+        end
       end
     end
   end
