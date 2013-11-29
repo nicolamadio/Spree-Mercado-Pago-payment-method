@@ -5,8 +5,9 @@ gem 'spree_auth_devise', :git => 'https://github.com/spree/spree_auth_devise.git
 
 
 group :test do
-  gem 'guard-rspec'
+  gem 'guard-rspec', '~> 4.0.0'
   gem 'capybara'
+  gem 'rspec-rails', '~> 2.14.0'
   gem 'zeus', require: false
 end
 

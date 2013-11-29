@@ -1,4 +1,7 @@
 require 'zeus/rails'
+
+ENV['GUARD_NOTIFY'] = 'true'
+ENV['GUARD_NOTIFICATIONS'] = "---\n- :name: :notifysend\n  :options: {}\n"
  
 ROOT_PATH = File.expand_path(Dir.pwd)
 ENV_PATH  = File.expand_path('spec/dummy/config/environment',  ROOT_PATH)
