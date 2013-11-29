@@ -36,27 +36,20 @@ class SpreeMercadoPagoClient
     if response.code != 200
       @errors << I18n.t(:mp_authentication_error)
       raise MercadoPagoException.new 
-
-      
-    else
-      @errors = []
-      @auth_response = ActiveSupport::JSON.decode(response)
     end
 
-    @auth_response
+    @auth_response = ActiveSupport::JSON.decode(response)
   end
 
   def send_data
     response = send_preferences_request
 
     if response.code != 201
-      @preferences_response = nil
       @errors << I18n.t(:mp_preferences_setup_error)
-    else
-      @errors = []
-      @preferences_response = ActiveSupport::JSON.decode(response)
+      raise MercadoPagoException.new
     end
-
+      
+    @preferences_response = ActiveSupport::JSON.decode(response)
     @preferences_response
   end
 

@@ -88,8 +88,8 @@ describe SpreeMercadoPagoClient do
         client.authenticate
       end
 
-      it "returns truthy value on success" do
-        client.send_data.should be_true
+      it "return value should not be nil" do
+        client.send_data.should_not be_nil
       end
 
       it "#redirect_url returns offsite checkout url" do
@@ -101,22 +101,20 @@ describe SpreeMercadoPagoClient do
 
     context "on failure" do
       before(:each) do
+
         response = double("response")
         response.stub(:code).and_return(200, 400)
         response.stub(:to_str) { {some_fake_data: "irrelevant"}.to_json }
         RestClient.should_receive(:post).exactly(2).times { response }
+        client.authenticate
       end
 
-      it "returns falsy value" do
-        client.authenticate
-        client.send_data.should be_false
+      it "throws exception and populate errors" do
+        expect {client.send_data}.to raise_error(MercadoPagoException) do |variable|
+          client.errors.should include(I18n.t(:mp_authentication_error))
+        end
       end
 
-      it "populates #errors returns array of errors" do
-        client.authenticate
-        client.send_data
-        client.errors.should include(I18n.t(:mp_preferences_setup_error))
-      end
     end
   end
 
