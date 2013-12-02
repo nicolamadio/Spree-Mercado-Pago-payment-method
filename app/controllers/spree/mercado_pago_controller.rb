@@ -18,6 +18,8 @@ module Spree
     end
 
     def failure
+      current_order
+      flash[:error] = I18n.t(:mp_invalid_order)
     end
 
     def payment

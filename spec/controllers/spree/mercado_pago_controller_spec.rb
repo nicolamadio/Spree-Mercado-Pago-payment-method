@@ -33,7 +33,6 @@ describe Spree::MercadoPagoController do
       context "with valid order" do
 
         before do
-
           spree_get :success, { external_reference: payment.id }
         end
 
@@ -85,20 +84,19 @@ describe Spree::MercadoPagoController do
     describe "#failure" do
       context "with valid order" do
         before do
-          spree_get :failure, { order_number: order.number }
+          spree_get :failure, { external_reference: payment.id }
         end
 
         it { response.should be_success }
-        it { assigns(:order).should_not be_nil }
-        it { assigns(:order).state.should eq("payment") }
-        it { assigns(:order).id.should eq(order.id)}
-        it { assigns(:order).payment.state.should eq("pending") }
+        it { assigns(:current_order).should_not be_nil }
+        it { assigns(:current_order).state.should eq("payment") }
+        it { assigns(:current_order).id.should eq(order.id)}
+        it { assigns(:current_order).payment_state.should be_nil }
       end
 
       context "with invalid order" do
-        before { spree_get :failure }
+        before { spree_get :failure, { external_reference: create(:payment, payment_method: payment_method, order: another_order).id } }
 
-        it { response.should redirect_to(spree.root_path) }
         it { flash[:error].should eq(I18n.t(:mp_invalid_order)) }
       end
     end
