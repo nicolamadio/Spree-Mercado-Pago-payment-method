@@ -17,6 +17,7 @@ describe SpreeMercadoPagoClient do
   let(:url_callbacks) { {success: "url", failure: "url", pending: "url"} }
   
   let(:payment_method) { double :payment_method, id: 1, preferred_client_id:"app id", preferred_client_secret: "app secret" }
+  let(:payment) {double :payment, payment_method:payment_method, id:1 }
   let(:login_json_response)  do
     File.open("#{SPEC_ROOT}/fixtures/authenticated.json", "r").read
   end
@@ -25,7 +26,7 @@ describe SpreeMercadoPagoClient do
     File.open("#{SPEC_ROOT}/fixtures/preferences_created.json", "r").read
   end
 
-  let(:client) {SpreeMercadoPagoClient.new(order, payment_method, url_callbacks[:success], url_callbacks[:pending], url_callbacks[:failure] )}
+  let(:client) {SpreeMercadoPagoClient.new(order, payment, url_callbacks[:success], url_callbacks[:pending], url_callbacks[:failure] )}
 
   describe "#initialize" do
 
@@ -44,7 +45,7 @@ describe SpreeMercadoPagoClient do
       end
 
       it "returns truthy value" do
-        client.authenticate.should_not be_nil
+        expect{client.authenticate}.to eq(response)
       end
 
       it "#errors returns empty array" do

@@ -8,7 +8,7 @@ module Spree
     before_filter :create_payment, only: [:payment]
 
     def success
-      current_order.next!
+      @current_order.next!
       payment = @current_order.payments.find(params[:external_reference])
       payment.purchase!
     end
@@ -83,7 +83,10 @@ module Spree
     end
 
     def check_state
-      ActiveSupport::Deprecation.warn 'We should check the state before mark as success/pending', caller
+      unless current_order.payment?
+        flash[:error] = I18n.t(:mp_invalid_order)
+        redirect_to root_path
+      end
     end
 
     def create_payment

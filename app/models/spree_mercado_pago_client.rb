@@ -1,7 +1,7 @@
 # -*- encoding : utf-8 -*-
 require 'rest_client'
 
-
+ 
 class MercadoPagoException < Exception
 end
 
