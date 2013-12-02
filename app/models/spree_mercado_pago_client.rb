@@ -50,11 +50,10 @@ class SpreeMercadoPagoClient
     end
       
     @preferences_response = ActiveSupport::JSON.decode(response)
-    @preferences_response
   end
 
   def redirect_url
-    point_key = ( if sandbox then 'sandbox_init_point' else 'init_point' end)
+    point_key = sandbox ? 'sandbox_init_point' : 'init_point'
 
     @preferences_response[point_key] if @preferences_response.present?
 
