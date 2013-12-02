@@ -46,7 +46,7 @@ describe Spree::MercadoPagoController do
 
       context "with invalid order" do
         before do
-          spree_get :success, { external_reference: create(:payment, payment_method: payment_method, order: another_order) }
+          spree_get :success, { external_reference: create(:payment, payment_method: payment_method, order: another_order).id }
         end
 
 

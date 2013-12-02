@@ -42,6 +42,7 @@ describe SpreeMercadoPagoClient do
         response.stub(:code) { 200 }
         response.stub(:to_str) { login_json_response }
         RestClient.should_receive(:post) { response }
+        let(:response) { response }
       end
 
       it "returns truthy value" do

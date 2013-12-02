@@ -92,7 +92,7 @@ module Spree
     end
 
     def check_payment_state
-      unless @current_order.payments.where(params[:external_reference]).exists?
+      unless @current_order.payments.where(id: params[:external_reference]).exists?
         flash[:error] = I18n.t(:mp_invalid_order)
         redirect_to root_path
       end
