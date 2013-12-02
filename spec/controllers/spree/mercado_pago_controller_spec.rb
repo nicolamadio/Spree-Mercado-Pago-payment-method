@@ -22,7 +22,6 @@ describe Spree::MercadoPagoController do
     let(:payment) {create(:payment, payment_method: payment_method, order: order)}
     let(:another_order) do
       order = Spree::Order.create(user: user, state: "payment")
-      session[:order_id] = order.id
       create(:payment, payment_method: payment_method, order: order)
       order
     end

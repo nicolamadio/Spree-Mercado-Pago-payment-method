@@ -3,7 +3,7 @@ require 'rest_client'
 
 module Spree
   class MercadoPagoController < Spree::StoreController
-    before_filter :check_state, only: [:success, :pending]
+    before_filter :current_order, :check_order_state, :check_payment_state,  only: [:success, :pending]
     before_filter :get_payment_method, only: [:payment]
     before_filter :create_payment, only: [:payment]
 
@@ -84,8 +84,15 @@ module Spree
       @payment_method = Spree::PaymentMethod.find(selected_method_id)
     end
 
-    def check_state
+    def check_order_state
       unless current_order.payment?
+        flash[:error] = I18n.t(:mp_invalid_order)
+        redirect_to root_path
+      end
+    end
+
+    def check_payment_state
+      unless @current_order.payments.where(params[:external_reference]).exists?
         flash[:error] = I18n.t(:mp_invalid_order)
         redirect_to root_path
       end
