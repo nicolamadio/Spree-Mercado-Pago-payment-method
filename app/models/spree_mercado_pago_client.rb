@@ -16,10 +16,11 @@ class SpreeMercadoPagoClient
   attr_reader :auth_response
   attr_reader :preferences_response
 
-  def initialize(order, payment_method, success_callback, 
+  def initialize(order, payment, success_callback,
     pending_callback, failure_callback, options={})
 
-    @payment_method = payment_method
+    @payment = payment
+    @payment_method = payment.payment_method
     @api_options = options.clone
     @order = order
     @errors = []
@@ -94,7 +95,7 @@ class SpreeMercadoPagoClient
 
   def config_options
     @options = Hash.new
-    @options[:external_reference] = @payment_method.id
+    @options[:external_reference] = @payment.id
     @options[:back_urls] = {
       :success => @success_callback,
       :pending => @pending_callback,

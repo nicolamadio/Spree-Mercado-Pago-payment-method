@@ -23,14 +23,8 @@ module Spree
     def payment
       return unless current_order.payment?
 
-      back_urls = get_back_urls
-      options = {
-          sandbox: @payment_method.preferred_sandbox,
-          payment: @mp_payment
-      }
-      options[:payer] = payer_data
 
-      mercado_pago_client = SpreeMercadoPagoClient.new(@current_order, back_urls, options)
+      mercado_pago_client = create_client
 
       if mercado_pago_client.authenticate && mercado_pago_client.send_data
         redirect_to mercado_pago_client.redirect_url
@@ -45,6 +39,16 @@ module Spree
     def payer_data
       email = get_email
       {email:email}
+    end
+
+    def create_client
+      back_urls = get_back_urls
+      options = {
+          sandbox: @payment_method.preferred_sandbox,
+          payment: @mp_payment
+      }
+      options[:payer] = payer_data
+      SpreeMercadoPagoClient.new(@current_order, @mp_payment, back_urls[:success], back_urls[:pending], back_urls[:failure], options)
     end
 
     def get_email
