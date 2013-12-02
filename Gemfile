@@ -8,7 +8,6 @@ group :test do
   gem 'guard-rspec', '~> 4.0.0'
   gem 'capybara'
   gem 'rspec-rails', '~> 2.14.0'
-  gem 'zeus', require: false
 end
 
 gemspec
