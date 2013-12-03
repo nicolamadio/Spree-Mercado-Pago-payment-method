@@ -27,8 +27,6 @@ describe Spree::MercadoPagoController do
     end
 
     describe "#success" do
-
-
       context "with valid order" do
 
         before do
@@ -38,7 +36,7 @@ describe Spree::MercadoPagoController do
         it { response.should be_success }
         it { assigns(:current_order).should_not be_nil }
         it { assigns(:current_order).state.should eq("complete") }
-        it { assigns(:current_order).id.should eq(order.id)}
+        it { assigns(:current_order).should eq(order)}
         it { assigns(:current_order).payment_state.should eq("paid") }
         it { flash[:error].should be_nil }
 

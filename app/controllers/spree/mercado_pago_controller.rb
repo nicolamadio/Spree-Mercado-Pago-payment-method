@@ -9,12 +9,12 @@ module Spree
 
     def success
       @current_order.next!
-      payment = @current_order.payments.find(params[:external_reference])
-      payment.purchase!
+      @current_payment = @current_order.payments.find(params[:external_reference])
+      @current_payment.purchase!
     end
 
     def pending
-      current_order.next!
+      @current_order.next!
     end
 
     def failure
@@ -85,14 +85,15 @@ module Spree
     end
 
     def check_order_state
-      unless current_order.payment?
-        flash[:error] = I18n.t(:mp_invalid_order)
-        redirect_to root_path
-      end
+      check_state { current_order.payment? }
     end
 
     def check_payment_state
-      unless @current_order.payments.where(id: params[:external_reference]).exists?
+      check_state { @current_order.payments.where(id: params[:external_reference]).exists? }
+    end
+
+    def check_state
+      unless yield
         flash[:error] = I18n.t(:mp_invalid_order)
         redirect_to root_path
       end
