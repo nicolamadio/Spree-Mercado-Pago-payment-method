@@ -37,16 +37,19 @@ describe SpreeMercadoPagoClient do
 
   describe "#authenticate" do
     context "On success" do
-      before(:each) do
+      let(:http_response) {
         response = double("response")
         response.stub(:code) { 200 }
         response.stub(:to_str) { login_json_response }
-        RestClient.should_receive(:post) { response }
-        let(:response) { response }
+        response
+        }
+      let(:js_response) {ActiveSupport::JSON.decode(http_response)}
+      before(:each) do
+        expect(RestClient).to receive(:post).and_return( http_response )
       end
 
-      it "returns truthy value" do
-        expect{client.authenticate}.to eq(response)
+      it "returns a response object" do
+        expect(client.authenticate).to eq(js_response)
       end
 
       it "#errors returns empty array" do
