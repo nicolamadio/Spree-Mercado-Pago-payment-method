@@ -1,6 +1,20 @@
 # -*- encoding : utf-8 -*-
 require 'spec_helper'
 
+
+shared_context 'logged user' do
+  let(:user) { create(:user) }
+  before(:each) do
+    controller.stub(:spree_current_user => user)
+    session[:order_id] = order.id
+  end
+end
+
+shared_context 'another order' do
+  let(:another_order) { Spree::Order.create(user: user, state: "payment") }
+  let(:another_payment) { create(:payment, payment_method: payment_method, order: order) }
+end
+
 describe Spree::MercadoPagoController do
   it "doesn't affect current order if there is one (session[:order_id])"
 
@@ -9,22 +23,11 @@ describe Spree::MercadoPagoController do
   end
 
   context "Logged in user" do
-    let(:user)           { create(:user) }
+    include_context 'logged user'
+
     let(:payment_method) { create(:payment_method, type: "PaymentMethod::MercadoPago") }
-
-
-    before(:each) do
-      controller.stub(:spree_current_user => user)
-      session[:order_id] = order.id
-    end
-
     let(:order) { Spree::Order.create(user: user, state: "payment") }
     let(:payment) {create(:payment, payment_method: payment_method, order: order)}
-    let(:another_order) do
-      order = Spree::Order.create(user: user, state: "payment")
-      create(:payment, payment_method: payment_method, order: order)
-      order
-    end
 
     describe "#success" do
       context "spectate contributors calls" do
@@ -57,6 +60,7 @@ describe Spree::MercadoPagoController do
       end
 
       context "with invalid order" do
+        include_context 'another order'
         before do
           spree_get :success, { external_reference: create(:payment, payment_method: payment_method, order: another_order).id }
         end
@@ -69,8 +73,9 @@ describe Spree::MercadoPagoController do
 
     describe "#pending" do
       context "with valid order" do
+        include_context 'another order'
         before do
-          spree_get :pending, { external_reference: payment.id }
+          spree_get :pending, { external_reference: another_payment.id }
         end
 
         it { response.should be_success }
@@ -82,6 +87,7 @@ describe Spree::MercadoPagoController do
       end
 
       context "with invalid order" do
+        include_context 'another order'
         before do
           spree_get :success, { external_reference: create(:payment, payment_method: payment_method, order: another_order).id }
         end
@@ -106,6 +112,7 @@ describe Spree::MercadoPagoController do
       end
 
       context "with invalid order" do
+        include_context 'another order'
         before { spree_get :failure, { external_reference: create(:payment, payment_method: payment_method, order: another_order).id } }
 
         it { flash[:error].should eq(I18n.t(:mp_invalid_order)) }
