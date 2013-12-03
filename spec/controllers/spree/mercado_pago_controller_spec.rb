@@ -27,6 +27,21 @@ describe Spree::MercadoPagoController do
     end
 
     describe "#success" do
+      context "spectate contributors calls" do
+        before(:each) do
+          allow(subject).to receive(:params).and_return(external_reference: payment.id)
+        end
+
+        it { expect(subject.current_order).to receive("next!").with(any_args) }
+        it { expect(subject.current_payment).to receive("purchase!").with(any_args) }
+
+        after(:each) do
+          spree_get :success, { external_reference: payment.id }
+        end
+
+      end
+
+
       context "with valid order" do
 
         before do
@@ -37,7 +52,6 @@ describe Spree::MercadoPagoController do
         it { assigns(:current_order).should_not be_nil }
         it { assigns(:current_order).state.should eq("complete") }
         it { assigns(:current_order).should eq(order)}
-        it { assigns(:current_order).payment_state.should eq("paid") }
         it { flash[:error].should be_nil }
 
       end

@@ -3,13 +3,12 @@ require 'rest_client'
 
 module Spree
   class MercadoPagoController < Spree::StoreController
-    before_filter :current_order, :check_order_state, :check_payment_state,  only: [:success, :pending]
+    before_filter :current_order,  :check_order_state, :check_payment_state, :current_payment, only: [:success, :pending]
     before_filter :get_payment_method, only: [:payment]
     before_filter :create_payment, only: [:payment]
 
     def success
       @current_order.next!
-      @current_payment = @current_order.payments.find(params[:external_reference])
       @current_payment.purchase!
     end
 
@@ -25,7 +24,6 @@ module Spree
     def payment
       return unless current_order.payment?
 
-
       mercado_pago_client = create_client
 
       if mercado_pago_client.authenticate && mercado_pago_client.send_data
@@ -34,6 +32,12 @@ module Spree
         render :action => 'spree/checkout/mercado_pago_error'
       end
 
+    end
+
+    # The current payment find through order.payments.find(id)
+    def current_payment
+      @current_payment = current_order.payments.find(params[:external_reference]) unless @current_payment
+      @current_payment
     end
 
     private
