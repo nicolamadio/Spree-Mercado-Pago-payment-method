@@ -3,8 +3,8 @@ require 'rest_client'
 
 module Spree
   class MercadoPagoController < Spree::StoreController
-    before_filter :current_order, :check_order_state, :check_payment_state, :current_payment, only: [:success, :pending]
-    before_filter :get_payment_method, :create_payment, only: [:payment]
+    before_filter :current_order, :check_order_state, :check_payment_state, :current_payment, only: [:success, :pending,]
+    before_filter :get_payment_method, :create_payment, only: [:payment, :checkout_options]
 
     # Callback for "Mercado Pago". Set the order as "complete" and its payment as "paid"
     # TODO: Check payment state against Mercado Pago IPN
@@ -38,6 +38,19 @@ module Spree
         render :action => 'spree/checkout/mercado_pago_error'
       end
 
+    end
+
+    def checkout_options
+      return unless current_order.payment?
+
+      mercado_pago_client = create_client
+
+      if mercado_pago_client.authenticate && mercado_pago_client.send_data
+        render json: {
+            url: mercado_pago_client.redirect_url,
+            mode: mercado_pago_client.mode
+        }
+      end
     end
 
     # The current payment find through order.payments.find(id)

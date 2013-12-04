@@ -6,5 +6,7 @@
 </script>
 
 
-<%= link_to(image_tag("https://a248.e.akamai.net/secure.mlstatic.com/components/resources/mp/css/assets/desktop-logo-mercadopago.png"), mercado_pago_payment_url(:payment_method_id => payment_method.id), :method => :post, :id => "mercado_pago_button", class: :mercado_pago_button) %>
+<%= link_to(image_tag("https://a248.e.akamai.net/secure.mlstatic.com/components/resources/mp/css/assets/desktop-logo-mercadopago.png"), '#',:'data-url' => mercado_pago_checkout_options_path, :'data-payment-method-id' => payment_method.id, :method => :post, :id => "mercado_pago_button", class: :mercado_pago_button) %>
 
+<!-- Paste this code before closing the tag </body> -->
+<script type="text/javascript" src="https://www.mercadopago.com/org-img/jsapi/mptools/buttons/render.js"></script>

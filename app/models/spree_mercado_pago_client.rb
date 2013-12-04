@@ -60,6 +60,10 @@ class SpreeMercadoPagoClient
 
   end
 
+  def mode
+    'modal'
+  end
+
   private
   def send_authentication_request
     response = RestClient.post(
