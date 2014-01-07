@@ -128,6 +128,10 @@ class SpreeMercadoPagoClient
       order.next!
       payment.purchase!
     end
+    if status == 'pending' and not payment.completed?
+      order = payment.order
+      order.next!
+    end
   end
 
   def client_id

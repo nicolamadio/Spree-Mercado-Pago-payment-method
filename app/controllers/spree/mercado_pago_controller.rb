@@ -10,14 +10,22 @@ module Spree
 
     # Callback for "Mercado Pago". Check the order status
     def success
-      mercado_pago_client = create_client
-      mercado_pago_client.check_payment_status current_payment
+      result
     end
 
     # Callback for "Mercado Pago". Check the order status
     def pending
+      result
+    end
+
+    def result
       mercado_pago_client = create_client
       mercado_pago_client.check_payment_status current_payment
+      if current_payment.state_name == :completed
+        render :success
+      else
+        render :pending
+      end
     end
 
     # Callback for "Mercado Pago".
