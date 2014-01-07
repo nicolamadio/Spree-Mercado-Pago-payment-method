@@ -8,20 +8,19 @@ module Spree
     before_filter :get_payment_method, :create_payment, :only => [:payment]
     skip_before_filter :verify_authenticity_token, :only => [:notification]
 
-    # Callback for "Mercado Pago". Set the order as "complete" and its payment as "paid"
+    # Callback for "Mercado Pago". Check the order status
     def success
       mercado_pago_client = create_client
       mercado_pago_client.check_payment_status current_payment
     end
 
-    # Callback for "Mercado Pago". Set the order as "complete" and its payment as "balance_due"
+    # Callback for "Mercado Pago". Check the order status
     def pending
       mercado_pago_client = create_client
       mercado_pago_client.check_payment_status current_payment
     end
 
     # Callback for "Mercado Pago".
-    # TODO: define what to do with Payment state
     def failure
       current_order
       flash[:error] = I18n.t(:mp_invalid_order)
@@ -50,7 +49,8 @@ module Spree
     end
 
     def notification
-      @payment_method = ::PaymentMethod::MercadoPago.last
+      # TODO: FIXME. This is not the best way. What happens with multiples MercadoPago payments?
+      @payment_method = ::PaymentMethod::MercadoPago.first
       mercado_pago_client = create_client
       mercado_pago_client.authenticate
       mercado_pago_client.check_ipn_status params[:id]

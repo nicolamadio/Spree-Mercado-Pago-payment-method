@@ -55,15 +55,16 @@ class SpreeMercadoPagoClient
 
   def check_ipn_status(mercado_pago_id)
     response = send_notification_request mercado_pago_id
-    payment = Spree::Payment.find_by id: response['collection']['external_reference']
-    if payment
-      check_status payment, response['collection']
+    if response
+      payment = Spree::Payment.find_by id: response['collection']['external_reference']
+      if payment
+        check_status payment, response['collection']
+      end
     end
   end
 
   def check_payment_status(payment)
-    authenticate
-    response = send_search_request({:external_reference => payment.id, :access_token=>@auth_response['access_token']})
+    response = send_search_request({:external_reference => payment.id, :access_token => access_token})
     check_status payment, response['results'][0]['collection']
   end
 
@@ -79,27 +80,34 @@ class SpreeMercadoPagoClient
 
   def send_preferences_request(options)
     RestClient.post(
-        mp_preferences_url(@auth_response['access_token']),
+        preferences_url(access_token),
         options.to_json,
         :content_type => 'application/json', :accept => 'application/json'
     )
   end
 
   def send_notification_request(mercado_pago_id)
-    response = RestClient.post(
-        create_url("https://api.mercadolibre.com/collections/notifications/#{mercado_pago_id}", access_token: @auth_response['access_token']),
-        :content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'
-    )
-    ActiveSupport::JSON.decode(response)
+    url = create_url(notifications_url(mercado_pago_id), access_token: @auth_response['access_token'])
+    options = {:content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'}
+    get(url, options, quiet: true)
   end
 
   def send_search_request(params, options={})
     url = create_url(search_url, params)
-    response = RestClient.get(
-        url,
-        :content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'
-    )
-    ActiveSupport::JSON.decode(response)
+    options = {:content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'}
+    get(url, options)
+  end
+
+  def access_token
+    unless @auth_response
+      authenticate
+    end
+    @auth_response['access_token']
+  end
+
+  def notifications_url(mercado_pago_id)
+    sandbox_part = sandbox ? 'sandbox/' : ''
+    "https://api.mercadolibre.com/#{sandbox_part}collections/notifications/#{mercado_pago_id}"
   end
 
   def search_url
@@ -130,12 +138,21 @@ class SpreeMercadoPagoClient
     @payment_method.preferred_client_secret
   end
 
-  def mp_preferences_url(token)
+  def preferences_url(token)
     create_url 'https://api.mercadolibre.com/checkout/preferences', access_token: token
   end
 
   def sandbox
     @api_options[:sandbox]
+  end
+
+  def get(url, request_options={}, options={})
+    begin
+      response = RestClient.get(url, request_options)
+      ActiveSupport::JSON.decode(response)
+    rescue => e
+      raise e unless options[:quiet]
+    end
   end
 
   def create_preference_options(order, payment, success_callback,
