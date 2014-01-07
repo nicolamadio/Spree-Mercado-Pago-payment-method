@@ -1,5 +1,5 @@
 require 'rubygems'
-
+require 'webmock/rspec'
 
 # Configure Rails Environment
 

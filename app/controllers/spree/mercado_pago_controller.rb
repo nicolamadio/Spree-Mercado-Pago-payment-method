@@ -4,19 +4,20 @@ require 'rest_client'
 module Spree
   class MercadoPagoController < Spree::StoreController
     before_filter :current_order, :check_order_state, :check_payment_state, :current_payment, only: [:success, :pending]
-    before_filter :get_payment_method, :create_payment, only: [:payment]
+    before_filter :get_payment_method_by_external_reference, :only => [:success, :pending, :failure]
+    before_filter :get_payment_method, :create_payment, :only => [:payment]
+    skip_before_filter :verify_authenticity_token, :only => [:notification]
 
     # Callback for "Mercado Pago". Set the order as "complete" and its payment as "paid"
-    # TODO: Check payment state against Mercado Pago IPN
     def success
-      @current_order.next!
-      @current_payment.purchase!
+      mercado_pago_client = create_client
+      mercado_pago_client.check_payment_status current_payment
     end
 
     # Callback for "Mercado Pago". Set the order as "complete" and its payment as "balance_due"
-    # TODO: Check payment state against Mercado Pago IPN
     def pending
-      @current_order.next!
+      mercado_pago_client = create_client
+      mercado_pago_client.check_payment_status current_payment
     end
 
     # Callback for "Mercado Pago".
@@ -31,8 +32,9 @@ module Spree
       return unless current_order.payment?
 
       mercado_pago_client = create_client
+      back_urls = get_back_urls
 
-      if mercado_pago_client.authenticate && mercado_pago_client.send_data
+      if mercado_pago_client.authenticate && mercado_pago_client.create_preference(@current_order, @mp_payment, back_urls[:success], back_urls[:pending], back_urls[:failure])
         redirect_to mercado_pago_client.redirect_url
       else
         render :action => 'spree/checkout/mercado_pago_error'
@@ -47,18 +49,33 @@ module Spree
       @current_payment
     end
 
+    def notification
+      @payment_method = ::PaymentMethod::MercadoPago.last
+      mercado_pago_client = create_client
+      mercado_pago_client.authenticate
+      mercado_pago_client.check_ipn_status params[:id]
+
+      render status: :ok, nothing: true
+    end
+
     private
 
+    def check_payment_status(payment)
+      client = MercadoPagoSimpleClient.new payment.payment_method.preferred_client_id, payment.payment_method.preferred_client_secret, sandbox: payment.payment_method.preferred_sandbox
+      if client.approved?(payment.id) and not payment.completed?
+        order = payment.order
+        order.next!
+        payment.purchase!
+      end
+    end
+
     # creates and returns a Mercado Pago client
-    # TODO: Refactor
     def create_client
-      back_urls = get_back_urls
       options = {
-          sandbox: @payment_method.preferred_sandbox,
-          payment: @mp_payment
+          sandbox: @payment_method.preferred_sandbox
       }
       options[:payer] = payer_data
-      SpreeMercadoPagoClient.new(@current_order, @mp_payment, back_urls[:success], back_urls[:pending], back_urls[:failure], options)
+      SpreeMercadoPagoClient.new(@payment_method, options)
     end
 
     # Get payer info for sending within Mercado Pago request
@@ -72,7 +89,7 @@ module Spree
       user = spree_current_user
 
       user.email if user
-      current_order.email
+      current_order.email if current_order
     end
 
     # Get urls callbacks.
@@ -100,7 +117,7 @@ module Spree
 
     # Check the right state of order payment state
     def check_payment_state
-      check_state { @current_order.payments.where(id: params[:external_reference]).exists? }
+      check_state { current_order.payments.where(id: params[:external_reference]).exists? }
     end
 
     def check_state
@@ -112,6 +129,11 @@ module Spree
 
     def create_payment
       @mp_payment = current_order.payments.create!({:source => @payment_method, :amount => @current_order.total, :payment_method => @payment_method})
+    end
+
+    def get_payment_method_by_external_reference
+      external_reference = params[:external_reference]
+      @payment_method = Spree::Payment.find(external_reference).payment_method
     end
 
     def get_payment_method

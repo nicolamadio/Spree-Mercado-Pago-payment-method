@@ -1,7 +1,7 @@
 # -*- encoding : utf-8 -*-
 require 'rest_client'
 
- 
+
 class MercadoPagoException < Exception
 end
 
@@ -16,19 +16,10 @@ class SpreeMercadoPagoClient
   attr_reader :auth_response
   attr_reader :preferences_response
 
-  def initialize(order, payment, success_callback,
-    pending_callback, failure_callback, options={})
-
-    @payment = payment
-    @payment_method = payment.payment_method
+  def initialize(payment_method, options={})
+    @payment_method = payment_method
     @api_options = options.clone
-    @order = order
     @errors = []
-    
-    @success_callback = success_callback
-    @pending_callback = pending_callback
-    @failure_callback = failure_callback
-    config_options
   end
 
   def authenticate
@@ -36,45 +27,99 @@ class SpreeMercadoPagoClient
 
     if response.code != 200
       @errors << I18n.t(:mp_authentication_error)
-      raise MercadoPagoException.new 
+      raise MercadoPagoException.new
     end
 
     @auth_response = ActiveSupport::JSON.decode(response)
   end
 
-  def send_data
-    response = send_preferences_request
+  def create_preference(order, payment, success_callback,
+      pending_callback, failure_callback)
+
+    options = create_preference_options order, payment, success_callback,
+                                        pending_callback, failure_callback
+    response = send_preferences_request options
 
     if response.code != 201
       @errors << I18n.t(:mp_preferences_setup_error)
       raise MercadoPagoException.new
     end
-      
+
     @preferences_response = ActiveSupport::JSON.decode(response)
   end
 
   def redirect_url
     point_key = sandbox ? 'sandbox_init_point' : 'init_point'
-
     @preferences_response[point_key] if @preferences_response.present?
+  end
 
+  def check_ipn_status(mercado_pago_id)
+    response = send_notification_request mercado_pago_id
+    payment = Spree::Payment.find_by id: response['collection']['external_reference']
+    if payment
+      check_status payment, response['collection']
+    end
+  end
+
+  def check_payment_status(payment)
+    authenticate
+    response = send_search_request({:external_reference => payment.id, :access_token=>@auth_response['access_token']})
+    check_status payment, response['results'][0]['collection']
   end
 
   private
+
   def send_authentication_request
-    response = RestClient.post(
-      'https://api.mercadolibre.com/oauth/token',
-      {:grant_type => 'client_credentials', :client_id => client_id, :client_secret => client_secret},
-      :content_type=> "application/x-www-form-urlencoded", :accept => 'application/json'
+    RestClient.post(
+        'https://api.mercadolibre.com/oauth/token',
+        {:grant_type => 'client_credentials', :client_id => client_id, :client_secret => client_secret},
+        :content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'
     )
   end
 
-  def send_preferences_request
+  def send_preferences_request(options)
     RestClient.post(
-      mp_preferences_url(@auth_response["access_token"]),
-      @options.to_json,
-      :content_type=> 'application/json', :accept => 'application/json'
+        mp_preferences_url(@auth_response['access_token']),
+        options.to_json,
+        :content_type => 'application/json', :accept => 'application/json'
     )
+  end
+
+  def send_notification_request(mercado_pago_id)
+    response = RestClient.post(
+        create_url("https://api.mercadolibre.com/collections/notifications/#{mercado_pago_id}", access_token: @auth_response['access_token']),
+        :content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'
+    )
+    ActiveSupport::JSON.decode(response)
+  end
+
+  def send_search_request(params, options={})
+    url = create_url(search_url, params)
+    response = RestClient.get(
+        url,
+        :content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'
+    )
+    ActiveSupport::JSON.decode(response)
+  end
+
+  def search_url
+    sandbox_part = sandbox ? 'sandbox/' : ''
+    "https://api.mercadolibre.com/#{sandbox_part}collections/search"
+  end
+
+  def create_url(url, params={})
+    uri = URI(url)
+    uri.query = URI.encode_www_form(params)
+    uri.to_s
+  end
+
+  def check_status(payment, mp_response)
+    status = mp_response['status']
+    if status == 'approved' and not payment.completed?
+      order = payment.order
+      order.next!
+      payment.purchase!
+    end
   end
 
   def client_id
@@ -86,35 +131,38 @@ class SpreeMercadoPagoClient
   end
 
   def mp_preferences_url(token)
-    "https://api.mercadolibre.com/checkout/preferences?access_token=#{token}"
+    create_url 'https://api.mercadolibre.com/checkout/preferences', access_token: token
   end
 
   def sandbox
     @api_options[:sandbox]
   end
 
-  def config_options
-    @options = Hash.new
-    @options[:external_reference] = @payment.id
-    @options[:back_urls] = {
-      :success => @success_callback,
-      :pending => @pending_callback,
-      :failure => @failure_callback
+  def create_preference_options(order, payment, success_callback,
+      pending_callback, failure_callback)
+    options = Hash.new
+    options[:external_reference] = payment.id
+    options[:back_urls] = {
+        :success => success_callback,
+        :pending => pending_callback,
+        :failure => failure_callback
     }
-    @options[:items] = Array.new
+    options[:items] = Array.new
 
     payer_options = @api_options[:payer]
 
-    @options[:payer] = payer_options if payer_options
+    options[:payer] = payer_options if payer_options
 
-    @order.line_items.each do |li|
+    order.line_items.each do |li|
       h = {
-        :title => line_item_description_text(li.variant.product.description),
-        :unit_price => li.price.to_f,
-        :quantity => li.quantity,
-        :currency_id => "ARS"
+          :title => line_item_description_text(li.variant.product.description),
+          :unit_price => li.price.to_f,
+          :quantity => li.quantity,
+          :currency_id => 'ARS'
       }
-      @options[:items] << h
+      options[:items] << h
+
     end
+    options
   end
 end
