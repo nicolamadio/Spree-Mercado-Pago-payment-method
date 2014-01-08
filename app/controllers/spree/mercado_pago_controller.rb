@@ -5,7 +5,7 @@ module Spree
   class MercadoPagoController < Spree::StoreController
     before_filter :verify_external_reference, :current_payment, only: [:success, :pending]
     before_filter :payment_method_by_external_reference, :only => [:success, :pending, :failure]
-    before_filter :payment_method, :create_payment, :only => [:payment]
+    before_filter :verify_payment_state, :only => [:payment]
     skip_before_filter :verify_authenticity_token, :only => [:notification]
 
     # Callback for "Mercado Pago". Check the order status
@@ -36,7 +36,9 @@ module Spree
 
     # If the order is in 'payment' state, redirects to Mercado Pago Checkout page
     def payment
-      return unless current_order.payment?
+      @payment_method = Spree::PaymentMethod.find(params[:payment_method_id])
+
+      @mp_payment = current_order.payments.create!({:source => @payment_method, :amount => current_order.total, :payment_method => @payment_method})
 
       mercado_pago_client = create_client
       back_urls = get_back_urls
@@ -127,18 +129,13 @@ module Spree
       end
     end
 
-    def create_payment
-      @mp_payment = current_order.payments.create!({:source => @payment_method, :amount => @current_order.total, :payment_method => @payment_method})
+    def verify_payment_state
+      redirect_to root_path unless current_order.payment?
     end
 
     def payment_method_by_external_reference
       external_reference = params[:external_reference]
       @payment_method = Spree::Payment.find(external_reference).payment_method
-    end
-
-    def payment_method
-      selected_method_id = params[:payment_method_id]
-      @payment_method = Spree::PaymentMethod.find(selected_method_id)
     end
   end
 end

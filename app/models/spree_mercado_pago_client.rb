@@ -123,14 +123,15 @@ class SpreeMercadoPagoClient
 
   def check_status(payment, mp_response)
     status = mp_response['status']
-    if status == 'approved' and not payment.completed?
-      order = payment.order
-      order.next!
-      payment.purchase!
-    end
-    if status == 'pending' and not payment.completed?
-      order = payment.order
-      order.next!
+    order = payment.order
+    unless payment.completed?
+      case status
+        when 'approved'
+          order.next! unless order.complete?
+          payment.purchase!
+        when 'pending'
+          order.next! unless order.complete?
+      end
     end
   end
 

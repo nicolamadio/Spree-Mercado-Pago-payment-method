@@ -68,20 +68,6 @@ describe Spree::MercadoPagoController do
         it { flash[:error].should be_nil }
 
       end
-
-      context 'with invalid order' do
-        include_context 'another order'
-        before do
-          stub_request(:get, "https://api.mercadolibre.com/sandbox/collections/search?access_token=123546&external_reference=#{another_payment.id}").
-              with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip, deflate', 'Content-Type' => 'application/x-www-form-urlencoded', 'User-Agent' => 'Ruby'}).
-              to_return(:status => 200, :body => mercado_pago_seach_response.to_json, :headers => {})
-          spree_get :success, {external_reference: another_payment.id}
-        end
-
-
-        it { response.should redirect_to(spree.root_path) }
-        it { flash[:error].should eq(I18n.t(:mp_invalid_order)) }
-      end
     end
 
     describe '#pending' do
