@@ -128,7 +128,7 @@ class SpreeMercadoPagoClient
       case status
         when 'approved'
           order.next! unless order.complete?
-          payment.purchase! unless payment.state == 'paid'
+          payment.purchase! unless order.paid?
         when 'pending'
           order.next! unless order.complete?
       end
