@@ -49,8 +49,8 @@ module Spree
 
     end
 
-    # The current payment find through order.payments.find(id)
-    # Used for supporting only (in specs mainly)
+    # The current payment find through Spree::Payment.find(params[:external_reference])
+    # Maybe it has a security problem.
     def current_payment
       @current_payment = Spree::Payment.find(params[:external_reference]) unless @current_payment
       @current_payment
