@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'webmock/rspec'
-
+require 'webmock/api'
 # Configure Rails Environment
 
 ENV['RAILS_ENV'] = 'test'

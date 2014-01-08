@@ -3,9 +3,9 @@ require 'rest_client'
 
 module Spree
   class MercadoPagoController < Spree::StoreController
-    before_filter :current_order, :check_order_state, :check_payment_state, :current_payment, only: [:success, :pending]
-    before_filter :get_payment_method_by_external_reference, :only => [:success, :pending, :failure]
-    before_filter :get_payment_method, :create_payment, :only => [:payment]
+    before_filter :verify_external_reference, :current_payment, only: [:success, :pending]
+    before_filter :payment_method_by_external_reference, :only => [:success, :pending, :failure]
+    before_filter :payment_method, :create_payment, :only => [:payment]
     skip_before_filter :verify_authenticity_token, :only => [:notification]
 
     # Callback for "Mercado Pago". Check the order status
@@ -52,12 +52,13 @@ module Spree
     # The current payment find through order.payments.find(id)
     # Used for supporting only (in specs mainly)
     def current_payment
-      @current_payment = current_order.payments.find(params[:external_reference]) unless @current_payment
+      @current_payment = Spree::Payment.find(params[:external_reference]) unless @current_payment
       @current_payment
     end
 
     def notification
       # TODO: FIXME. This is not the best way. What happens with multiples MercadoPago payments?
+      # Maybe the client shouldn't have the payment_method as required param
       @payment_method = ::PaymentMethod::MercadoPago.first
       mercado_pago_client = create_client
       mercado_pago_client.authenticate
@@ -118,18 +119,9 @@ module Spree
       }
     end
 
-    # Check the right state of order state
-    def check_order_state
-      check_state { current_order.payment? }
-    end
-
-    # Check the right state of order payment state
-    def check_payment_state
-      check_state { current_order.payments.where(id: params[:external_reference]).exists? }
-    end
-
-    def check_state
-      unless yield
+    def verify_external_reference
+      external_reference = params[:external_reference]
+      unless external_reference
         flash[:error] = I18n.t(:mp_invalid_order)
         redirect_to root_path
       end
@@ -139,12 +131,12 @@ module Spree
       @mp_payment = current_order.payments.create!({:source => @payment_method, :amount => @current_order.total, :payment_method => @payment_method})
     end
 
-    def get_payment_method_by_external_reference
+    def payment_method_by_external_reference
       external_reference = params[:external_reference]
       @payment_method = Spree::Payment.find(external_reference).payment_method
     end
 
-    def get_payment_method
+    def payment_method
       selected_method_id = params[:payment_method_id]
       @payment_method = Spree::PaymentMethod.find(selected_method_id)
     end
