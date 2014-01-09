@@ -132,6 +132,7 @@ class SpreeMercadoPagoClient
   def check_status(payment, mp_response)
     status = mp_response['status']
     order = payment.order
+    #TODO: Should 'complete' method call be out of case statement?
     case status
       when 'approved'
         order.next! unless order.complete?
