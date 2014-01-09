@@ -137,9 +137,9 @@ class SpreeMercadoPagoClient
       when 'approved'
         order.next! unless order.complete?
         payment.purchase! unless order.paid?
-      when 'pending', 'in_process', 'in_mediation'
+      when 'pending', 'in_process', 'in_mediation', 'rejected'
         order.next! unless order.complete?
-      when 'rejected', 'cancelled', 'refunded'
+      when 'cancelled', 'refunded'
         order.next! unless order.complete?
         # Reload the payment instance because on order save it acquire another state
         # see https://github.com/spree/spree/blob/master/core/app/models/spree/order_updater.rb
