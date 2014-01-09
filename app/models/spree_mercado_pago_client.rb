@@ -121,17 +121,29 @@ class SpreeMercadoPagoClient
     uri.to_s
   end
 
+  # Check the payment state and update the order and payment state if required.
+  #
+  # If the payment status is 'approved', turn the order state to 'completed' and
+  #   the payment state to 'paid'.
+  # If the payment status is 'pending', 'in_process' or 'in_mediation'; turn the order state to 'completed' and
+  #   the payment will become 'balance due' (or 'pending')
+  # If the payment status is 'rejected', 'cancelled', 'refunded', turn the order state to 'completed' and
+  #   the payment state to 'failure'.
   def check_status(payment, mp_response)
     status = mp_response['status']
     order = payment.order
-    unless payment.completed?
-      case status
-        when 'approved'
-          order.next! unless order.complete?
-          payment.purchase! unless order.paid?
-        when 'pending'
-          order.next! unless order.complete?
-      end
+    case status
+      when 'approved'
+        order.next! unless order.complete?
+        payment.purchase! unless order.paid?
+      when 'pending', 'in_process', 'in_mediation'
+        order.next! unless order.complete?
+      when 'rejected', 'cancelled', 'refunded'
+        order.next! unless order.complete?
+        # Reload the payment instance because on order save it acquire another state
+        # see https://github.com/spree/spree/blob/master/core/app/models/spree/order_updater.rb
+        payment = order.payments.find(payment.id)
+        payment.failure if payment.can_failure?
     end
   end
 

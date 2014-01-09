@@ -71,15 +71,6 @@ module Spree
 
     private
 
-    def check_payment_status(payment)
-      client = MercadoPagoSimpleClient.new payment.payment_method.preferred_client_id, payment.payment_method.preferred_client_secret, sandbox: payment.payment_method.preferred_sandbox
-      if client.approved?(payment.id) and not payment.completed?
-        order = payment.order
-        order.next!
-        payment.purchase!
-      end
-    end
-
     # creates and returns a Mercado Pago client
     def create_client
       options = {
