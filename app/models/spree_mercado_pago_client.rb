@@ -165,17 +165,16 @@ class SpreeMercadoPagoClient
   end
 
   def get(url, request_options={}, options={})
-    begin
-      response = RestClient.get(url, request_options)
-      ActiveSupport::JSON.decode(response)
-    rescue => e
-      raise e unless options[:quiet]
-    end
+    response = RestClient.get(url, request_options)
+    ActiveSupport::JSON.decode(response)
+  rescue => e
+    raise e unless options[:quiet]
   end
 
   def create_preference_options(order, payment, success_callback,
       pending_callback, failure_callback)
     options = Hash.new
+    # TODO: Maybe the external_reference should be a "<payment-id>-<payment_method-id>"
     options[:external_reference] = payment.id
     options[:back_urls] = {
         :success => success_callback,
