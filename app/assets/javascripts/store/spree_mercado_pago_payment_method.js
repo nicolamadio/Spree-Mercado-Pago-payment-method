@@ -7,7 +7,6 @@ MercadoPago = {
         }
     }
 };
-console.log("here");
 
 $(document).ready(function() {
     checkedPaymentMethod = $('div[data-hook="checkout_payment_step"] input[type="radio"]:checked');
