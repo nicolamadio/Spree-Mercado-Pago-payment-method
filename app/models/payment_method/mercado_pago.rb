@@ -13,13 +13,17 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
     false
   end
 
-  def actions
-    %w{capture void}
+  def provider_class
+    SpreeMercadoPagoClient
   end
 
-  # Indicates whether its possible to void the payment.
-  def can_void?(payment)
-    payment.state != 'void'
+  def provider(additional_options={})
+    options = {
+      sandbox: preferred_sandbox
+    }
+    client = provider_class.new(self, options.merge(additional_options))
+    client.authenticate
+    client
   end
 
   def auto_capture?
@@ -27,18 +31,37 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
   end
 
   def authorize(amount, source, gateway_options)
-    ActiveMerchant::Billing::Response.new(true, "", {}, {})
+    status = provider.get_payment_status gateway_options[:order_id]
+    success = !failed?(status)
+    ActiveMerchant::Billing::Response.new(success, 'MercadoPago payment authorized', {status: status})
   end
 
-  def purchase(amount, source, gateway_options)
-    ActiveMerchant::Billing::Response.new(true, "", {}, {})
+  def capture(amount, source, gateway_options)
+    status = provider.get_payment_status gateway_options[:order_id]
+    success = approved?(status)
+    ActiveMerchant::Billing::Response.new(success, 'MercadoPago payment processed', {status: status})
   end
 
-  def capture(*args)
-    ActiveMerchant::Billing::Response.new(true, "", {}, {})
+  def try_capture payment
+    status = provider.get_payment_status "#{payment.order.number}-#{payment.identifier}"
+
+    if payment.pending? and not pending?(status)
+      payment.capture!
+    end
   end
 
-  def void(*args)
-    ActiveMerchant::Billing::Response.new(true, "", {}, {})
+  private
+
+  def pending?(status)
+    status == 'pending' or status == 'in_process' or status == 'in_mediation'
   end
+
+  def failed?(status)
+    status == 'rejected' or status == 'cancelled'
+  end
+
+  def approved?(status)
+    status == 'approved'
+  end
+
 end

@@ -53,19 +53,16 @@ class SpreeMercadoPagoClient
     @preferences_response[point_key] if @preferences_response.present?
   end
 
-  def check_ipn_status(mercado_pago_id)
+  def get_external_reference(mercado_pago_id)
     response = send_notification_request mercado_pago_id
     if response
-      payment = Spree::Payment.find_by id: response['collection']['external_reference']
-      if payment
-        check_status payment, response['collection']
-      end
+      response['collection']['external_reference']
     end
   end
 
-  def check_payment_status(payment)
-    response = send_search_request({:external_reference => payment.id, :access_token => access_token})
-    check_status payment, response['results'][0]['collection']
+  def get_payment_status(external_reference)
+    response = send_search_request({:external_reference => external_reference, :access_token => access_token})
+    response['results'][0]['collection']['status']
   end
 
   private
@@ -121,33 +118,6 @@ class SpreeMercadoPagoClient
     uri.to_s
   end
 
-  # Check the payment state and update the order and payment state if required.
-  #
-  # If the payment status is 'approved', turn the order state to 'completed' and
-  #   the payment state to 'paid'.
-  # If the payment status is 'pending', 'in_process' or 'in_mediation'; turn the order state to 'completed' and
-  #   the payment will become 'balance due' (or 'pending')
-  # If the payment status is 'rejected', 'cancelled', 'refunded', turn the order state to 'completed' and
-  #   the payment state to 'failure'.
-  def check_status(payment, mp_response)
-    status = mp_response['status']
-    order = payment.order
-    #TODO: Should 'complete' method call be out of case statement?
-    case status
-      when 'approved'
-        order.next! unless order.complete?
-        payment.purchase! unless order.paid?
-      when 'pending', 'in_process', 'in_mediation', 'rejected'
-        order.next! unless order.complete?
-      when 'cancelled', 'refunded'
-        order.next! unless order.complete?
-        # Reload the payment instance because on order save it acquire another state
-        # see https://github.com/spree/spree/blob/master/core/app/models/spree/order_updater.rb
-        payment = order.payments.find(payment.id)
-        payment.failure if payment.can_failure?
-    end
-  end
-
   def client_id
     @payment_method.preferred_client_id
   end
@@ -174,8 +144,7 @@ class SpreeMercadoPagoClient
   def create_preference_options(order, payment, success_callback,
       pending_callback, failure_callback)
     options = Hash.new
-    # TODO: Maybe the external_reference should be a "<payment-id>-<payment_method-id>"
-    options[:external_reference] = payment.id
+    options[:external_reference] = "#{order.number}-#{payment.identifier}"
     options[:back_urls] = {
         :success => success_callback,
         :pending => pending_callback,

@@ -1,83 +1,91 @@
 # -*- encoding : utf-8 -*-
-require 'rest_client'
-
 module Spree
+
   class MercadoPagoController < Spree::StoreController
+
     before_filter :verify_external_reference, :current_payment, only: [:success, :pending]
     before_filter :payment_method_by_external_reference, :only => [:success, :pending, :failure]
     before_filter :verify_payment_state, :only => [:payment]
     skip_before_filter :verify_authenticity_token, :only => [:notification]
 
+    # If the order is in 'payment' state, redirects to Mercado Pago Checkout page
+    def payment
+      mp_payment = current_order.payments.create!({:source => payment_method,
+                                                   :amount => current_order.total,
+                                                   :payment_method => @payment_method})
+
+      back_urls = get_back_urls
+
+      if provider.create_preference(current_order, mp_payment,
+                                    back_urls[:success], back_urls[:pending], back_urls[:failure])
+        redirect_to provider.redirect_url
+      else
+        render :action => 'spree/checkout/mercado_pago_error'
+      end
+    end
+
     # Callback for "Mercado Pago". Check the order status
     def success
-      result
+      process_payment current_payment
+      render_result
     end
 
     # Callback for "Mercado Pago". Check the order status
     def pending
-      result
-    end
-
-    def result
-      mercado_pago_client = create_client
-      mercado_pago_client.check_payment_status current_payment
-      if current_payment.state_name == :completed
-        render :success
-      else
-        render :pending
-      end
+      process_payment current_payment
+      render_result
     end
 
     # Callback for "Mercado Pago".
     def failure
-      current_order
+      process_payment current_payment
       flash[:error] = I18n.t(:mp_invalid_order)
     end
 
-    # If the order is in 'payment' state, redirects to Mercado Pago Checkout page
-    def payment
-      @payment_method = Spree::PaymentMethod.find(params[:payment_method_id])
-
-      @mp_payment = current_order.payments.create!({:source => @payment_method, :amount => current_order.total, :payment_method => @payment_method})
-
-      mercado_pago_client = create_client
-      back_urls = get_back_urls
-
-      if mercado_pago_client.authenticate && mercado_pago_client.create_preference(@current_order, @mp_payment, back_urls[:success], back_urls[:pending], back_urls[:failure])
-        redirect_to mercado_pago_client.redirect_url
-      else
-        render :action => 'spree/checkout/mercado_pago_error'
-      end
-
-    end
-
-    # The current payment find through Spree::Payment.find(params[:external_reference])
-    # Maybe it has a security problem.
-    def current_payment
-      @current_payment = Spree::Payment.find(params[:external_reference]) unless @current_payment
-      @current_payment
-    end
-
+    # "Mercado Pago" IPN
     def notification
       # TODO: FIXME. This is not the best way. What happens with multiples MercadoPago payments?
-      # Maybe the client shouldn't have the payment_method as required param
+      # TODO: Log all IPN messages
       @payment_method = ::PaymentMethod::MercadoPago.first
-      mercado_pago_client = create_client
-      mercado_pago_client.authenticate
-      mercado_pago_client.check_ipn_status params[:id]
+
+      external_reference = provider.get_external_reference params[:id]
+
+      if external_reference
+        puts "Processing payment for #{external_reference}"
+        payment = current_payment external_reference
+        process_payment payment
+      end
 
       render status: :ok, nothing: true
     end
 
     private
 
-    # creates and returns a Mercado Pago client
-    def create_client
-      options = {
-          sandbox: @payment_method.preferred_sandbox
-      }
-      options[:payer] = payer_data
-      SpreeMercadoPagoClient.new(@payment_method, options)
+    def payment_method
+      @payment_method ||= Spree::PaymentMethod.find(params[:payment_method_id])
+    end
+
+    def provider
+      @provider ||= payment_method.provider({:payer => payer_data})
+    end
+
+    def current_payment(external_reference=params[:external_reference])
+      @current_payment ||= Spree::Payment.find_by_identifier(external_reference.split('-')[1])
+    end
+
+    def render_result
+      if current_payment.completed?
+        render :success
+      else
+        render :pending
+      end
+    end
+
+    def process_payment(payment)
+      order = payment.order
+      order.next
+      payment.reload
+      payment_method.try_capture payment
     end
 
     # Get payer info for sending within Mercado Pago request
@@ -97,13 +105,13 @@ module Spree
     # Get urls callbacks.
     # If the current 'payment method' haven't any callback, the default will be used
     def get_back_urls
-      success_url = @payment_method.preferred_success_url
-      pending_url = @payment_method.preferred_pending_url
-      failure_url = @payment_method.preferred_failure_url
+      success_url = payment_method.preferred_success_url
+      pending_url = payment_method.preferred_pending_url
+      failure_url = payment_method.preferred_failure_url
 
-      success_url = spree.mercado_pago_success_url(order_number: @current_order.number) if success_url.empty?
-      pending_url = spree.mercado_pago_pending_url(order_number: @current_order.number) if pending_url.empty?
-      failure_url = spree.mercado_pago_failure_url(order_number: @current_order.number) if failure_url.empty?
+      success_url = spree.mercado_pago_success_url(order_number: current_order.number) if success_url.empty?
+      pending_url = spree.mercado_pago_pending_url(order_number: current_order.number) if pending_url.empty?
+      failure_url = spree.mercado_pago_failure_url(order_number: current_order.number) if failure_url.empty?
 
       {
           success: success_url,
@@ -125,8 +133,8 @@ module Spree
     end
 
     def payment_method_by_external_reference
-      external_reference = params[:external_reference]
-      @payment_method = Spree::Payment.find(external_reference).payment_method
+      @payment_method = current_payment.payment_method
     end
   end
+
 end
