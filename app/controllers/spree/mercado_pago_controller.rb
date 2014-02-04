@@ -24,21 +24,16 @@ module Spree
       end
     end
 
-    # Callback for "Mercado Pago". Check the order status
-    def success
-      process_payment current_payment
-      render_result
-    end
-
-    # Callback for "Mercado Pago". Check the order status
     def pending
-      process_payment current_payment
-      render_result
+      render_result :pending
     end
 
-    # Callback for "Mercado Pago".
+    def success
+      render_result :success
+    end
+
     def failure
-      process_payment current_payment
+      render_result :failure
       flash[:error] = I18n.t(:mp_invalid_order)
     end
 
@@ -61,6 +56,20 @@ module Spree
 
     private
 
+    def render_result(current_state)
+      process_payment current_payment
+      if success_order? and current_state != :success
+        redirect_to_state :success
+      end
+      if failed_payment? and current_state != :failure
+        redirect_to_state :failed
+      end
+      if pending_payment? and current_state != :pending
+        redirect_to_state :pending
+      end
+
+    end
+
     def payment_method
       @payment_method ||= Spree::PaymentMethod.find(params[:payment_method_id])
     end
@@ -70,15 +79,23 @@ module Spree
     end
 
     def current_payment(external_reference=params[:external_reference])
-      @current_payment ||= Spree::Payment.find_by_identifier(external_reference.split('-')[1])
+      @current_payment ||= Spree::Payment.find_by! identifier: external_reference
     end
 
-    def render_result
-      if current_payment.completed?
-        render :success
-      else
-        render :pending
-      end
+    def success_order?
+      current_payment.completed? and current_payment.order.completed?
+    end
+
+    def pending_payment?
+      (current_payment.pending? || current_payment.processing?) and current_payment.order.completed?
+    end
+
+    def failed_payment?
+      current_payment.failed? || current_payment.invalid?
+    end
+
+    def redirect_to_state(status)
+      redirect_to controller: 'spree/mercado_pago', action: status, external_reference: external_reference
     end
 
     def process_payment(payment)
@@ -92,6 +109,10 @@ module Spree
     def payer_data
       email = get_email
       {email: email}
+    end
+
+    def external_reference
+      params[:external_reference]
     end
 
     # Get email for using in Mercado Pago request

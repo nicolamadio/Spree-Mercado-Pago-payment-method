@@ -144,7 +144,7 @@ class SpreeMercadoPagoClient
   def create_preference_options(order, payment, success_callback,
       pending_callback, failure_callback)
     options = Hash.new
-    options[:external_reference] = "#{order.number}-#{payment.identifier}"
+    options[:external_reference] = payment.identifier
     options[:back_urls] = {
         :success => success_callback,
         :pending => pending_callback,

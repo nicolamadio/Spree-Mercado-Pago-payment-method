@@ -31,19 +31,19 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
   end
 
   def authorize(amount, source, gateway_options)
-    status = provider.get_payment_status gateway_options[:order_id]
+    status = provider.get_payment_status identifier(gateway_options[:order_id])
     success = !failed?(status)
     ActiveMerchant::Billing::Response.new(success, 'MercadoPago payment authorized', {status: status})
   end
 
   def capture(amount, source, gateway_options)
-    status = provider.get_payment_status gateway_options[:order_id]
+    status = provider.get_payment_status identifier(gateway_options[:order_id])
     success = approved?(status)
     ActiveMerchant::Billing::Response.new(success, 'MercadoPago payment processed', {status: status})
   end
 
   def try_capture payment
-    status = provider.get_payment_status "#{payment.order.number}-#{payment.identifier}"
+    status = provider.get_payment_status payment.identifier
 
     if payment.pending? and not pending?(status)
       payment.capture!
@@ -51,6 +51,10 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
   end
 
   private
+
+  def identifier(order_id)
+    order_id.split('-')[1]
+  end
 
   def pending?(status)
     status == 'pending' or status == 'in_process' or status == 'in_mediation'
