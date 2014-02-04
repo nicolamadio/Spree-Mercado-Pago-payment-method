@@ -6,4 +6,4 @@ env:
 script:
   - bundle exec rspec
 before_script:
-  - bundle exec rake test_app
+  - echo "Y" | bundle exec rake test_app
