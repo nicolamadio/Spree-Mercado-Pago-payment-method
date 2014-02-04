@@ -1,0 +1,9 @@
+language: ruby
+rvm:
+  - 2.1.0
+env:
+  - RAILS_ENV=test
+script:
+  - bundle exec rspec
+before_script:
+  - bundle exec rake test_app
