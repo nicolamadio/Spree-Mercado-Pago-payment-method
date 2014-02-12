@@ -27,7 +27,7 @@ class SpreeMercadoPagoClient
 
     if response.code != 200
       @errors << I18n.t(:mp_authentication_error)
-      raise MercadoPagoException.new
+      return nil
     end
 
     @auth_response = ActiveSupport::JSON.decode(response)
@@ -42,7 +42,7 @@ class SpreeMercadoPagoClient
 
     if response.code != 201
       @errors << I18n.t(:mp_preferences_setup_error)
-      raise MercadoPagoException.new
+      return nil
     end
 
     @preferences_response = ActiveSupport::JSON.decode(response)
@@ -72,15 +72,27 @@ class SpreeMercadoPagoClient
         'https://api.mercadolibre.com/oauth/token',
         {:grant_type => 'client_credentials', :client_id => client_id, :client_secret => client_secret},
         :content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'
-    )
+    ) do |response, request, result|
+      # Don't raise exceptions but return the response
+      log_error 'Send authentication request has failed.', response, request, result
+      response
+    end
   end
 
   def send_preferences_request(options)
-    RestClient.post(
-        preferences_url(access_token),
-        options.to_json,
-        :content_type => 'application/json', :accept => 'application/json'
-    )
+    RestClient.post(preferences_url(access_token), options.to_json,
+                    :content_type => 'application/json', :accept => 'application/json') do |response, request, result|
+      # Don't raise exceptions but return the response
+      log_error 'Send preference request has failed.', response, request, result
+      response
+    end
+  end
+
+  def log_error(msg, response, request, result)
+    Rails.logger.info msg
+    Rails.logger.info "response: #{response}."
+    Rails.logger.info "request args: #{request.args}."
+    Rails.logger.info "result #{result}."
   end
 
   def send_notification_request(mercado_pago_id)
@@ -127,7 +139,7 @@ class SpreeMercadoPagoClient
   end
 
   def preferences_url(token)
-    create_url 'https://api.mercadolibre.com/checkout/preferences', access_token: token
+    create_url 'https://api.mercadolibre.com/checkout/prefesrences', access_token: token
   end
 
   def sandbox

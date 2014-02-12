@@ -20,7 +20,7 @@ module Spree
                                     back_urls[:success], back_urls[:pending], back_urls[:failure])
         redirect_to provider.redirect_url
       else
-        render :action => 'spree/checkout/mercado_pago_error'
+        render 'spree/checkout/mercado_pago_error'
       end
     end
 
