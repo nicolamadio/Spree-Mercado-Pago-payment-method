@@ -139,7 +139,7 @@ class SpreeMercadoPagoClient
   end
 
   def preferences_url(token)
-    create_url 'https://api.mercadolibre.com/checkout/prefesrences', access_token: token
+    create_url 'https://api.mercadolibre.com/checkout/preferences', access_token: token
   end
 
   def sandbox
