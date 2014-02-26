@@ -50,6 +50,14 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
     end
   end
 
+  def source_required?
+    true
+  end
+
+  def payment_source_class
+    nil
+  end
+
   private
 
   def identifier(order_id)
