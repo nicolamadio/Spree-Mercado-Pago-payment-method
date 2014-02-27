@@ -1,10 +1,10 @@
-<img src="https://imgmp.mlstatic.com/org-img/banners/ar/medios/575X40.jpg" title="MercadoPago - Medios de pago" alt="MercadoPago - Medios de pago" width="575" height="40"/>
+<div id="mercadopago_payment_method">
+  <img src="https://imgmp.mlstatic.com/org-img/banners/ar/medios/575X40.jpg" title="MercadoPago - Medios de pago" alt="MercadoPago - Medios de pago" width="575" height="40"/>
 
-
-<script>
+  <script>
     MercadoPago.paymentMethodID = "<%= payment_method.id %>"
-</script>
+  </script>
 
-
-<%= link_to(image_tag("https://a248.e.akamai.net/secure.mlstatic.com/components/resources/mp/css/assets/desktop-logo-mercadopago.png"), mercado_pago_payment_url(:payment_method_id => payment_method.id), :method => :post, :id => "mercado_pago_button", class: :mercado_pago_button) %>
+  <%= link_to(image_tag("https://a248.e.akamai.net/secure.mlstatic.com/components/resources/mp/css/assets/desktop-logo-mercadopago.png"), mercado_pago_payment_url(:payment_method_id => payment_method.id), :method => :post, :id => "mercado_pago_button", class: :mercado_pago_button) %>
+</div>
 
