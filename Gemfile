@@ -13,6 +13,8 @@ end
 
 group :development, :test do
   gem 'zeus', require: false
+  gem 'sqlite3'
+  gem 'factory_girl_rails'
 end
 
 group :development do
