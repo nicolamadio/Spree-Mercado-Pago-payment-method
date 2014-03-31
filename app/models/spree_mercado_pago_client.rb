@@ -12,6 +12,10 @@ class SpreeMercadoPagoClient
   include ActionView::Helpers::SanitizeHelper
   include Spree::ProductsHelper
 
+  include MercadoPago::Authenticator
+  include MercadoPago::Preferences
+  include MercadoPago::Search
+
   attr_reader :errors
   attr_reader :auth_response
   attr_reader :preferences_response
@@ -22,56 +26,13 @@ class SpreeMercadoPagoClient
     @errors = []
   end
 
-  def authenticate
-    response = send_authentication_request
-    @auth_response = ActiveSupport::JSON.decode(response)
-  rescue RestClient::Exception => e
-    @errors << I18n.t(:mp_authentication_error)
-    raise MercadoPagoException.new e.message
-  end
-
-  def create_preference(order, payment, success_callback,
-      pending_callback, failure_callback)
-    options = create_preference_options order, payment, success_callback,
-                                        pending_callback, failure_callback
-    response = send_preferences_request options
-    @preferences_response = ActiveSupport::JSON.decode(response)
-  rescue RestClient::Exception => e
-    @errors << I18n.t(:mp_authentication_error)
-    raise MercadoPagoException.new e.message
-  end
-
   def redirect_url
     point_key = sandbox ? 'sandbox_init_point' : 'init_point'
     @preferences_response[point_key] if @preferences_response.present?
   end
 
-  def get_external_reference(mercado_pago_id)
-    response = send_notification_request mercado_pago_id
-    if response
-      response['collection']['external_reference']
-    end
-  end
-
-  def get_payment_status(external_reference)
-    response = send_search_request({:external_reference => external_reference, :access_token => access_token})
-    response['results'][0]['collection']['status']
-  end
 
   private
-
-  def send_authentication_request
-    RestClient.post(
-        'https://api.mercadolibre.com/oauth/token',
-        {:grant_type => 'client_credentials', :client_id => client_id, :client_secret => client_secret},
-        :content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'
-    )
-  end
-
-  def send_preferences_request(options)
-    RestClient.post(preferences_url(access_token), options.to_json,
-                    :content_type => 'application/json', :accept => 'application/json')
-  end
 
   def log_error(msg, response, request, result)
     Rails.logger.info msg
@@ -80,51 +41,12 @@ class SpreeMercadoPagoClient
     Rails.logger.info "result #{result}."
   end
 
-  def send_notification_request(mercado_pago_id)
-    url = create_url(notifications_url(mercado_pago_id), access_token: @auth_response['access_token'])
-    options = {:content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'}
-    get(url, options, quiet: true)
-  end
-
-  def send_search_request(params, options={})
-    url = create_url(search_url, params)
-    options = {:content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'}
-    get(url, options)
-  end
-
-  def access_token
-    unless @auth_response
-      authenticate
-    end
-    @auth_response['access_token']
-  end
-
-  def notifications_url(mercado_pago_id)
-    sandbox_part = sandbox ? 'sandbox/' : ''
-    "https://api.mercadolibre.com/#{sandbox_part}collections/notifications/#{mercado_pago_id}"
-  end
-
-  def search_url
-    sandbox_part = sandbox ? 'sandbox/' : ''
-    "https://api.mercadolibre.com/#{sandbox_part}collections/search"
-  end
-
-  def create_url(url, params={})
-    uri = URI(url)
-    uri.query = URI.encode_www_form(params)
-    uri.to_s
-  end
-
   def client_id
     @payment_method.preferred_client_id
   end
 
   def client_secret
     @payment_method.preferred_client_secret
-  end
-
-  def preferences_url(token)
-    create_url 'https://api.mercadolibre.com/checkout/preferences', access_token: token
   end
 
   def sandbox
@@ -138,31 +60,10 @@ class SpreeMercadoPagoClient
     raise e unless options[:quiet]
   end
 
-  def create_preference_options(order, payment, success_callback,
-      pending_callback, failure_callback)
-    options = Hash.new
-    options[:external_reference] = payment.identifier
-    options[:back_urls] = {
-        :success => success_callback,
-        :pending => pending_callback,
-        :failure => failure_callback
-    }
-    options[:items] = Array.new
-
-    payer_options = @api_options[:payer]
-
-    options[:payer] = payer_options if payer_options
-
-    order.line_items.each do |li|
-      h = {
-          :title => line_item_description_text(li.variant.product.description),
-          :unit_price => li.price.to_f,
-          :quantity => li.quantity,
-          :currency_id => 'ARS'
-      }
-      options[:items] << h
-
-    end
-    options
+  def create_url(url, params={})
+    uri = URI(url)
+    uri.query = URI.encode_www_form(params)
+    uri.to_s
   end
+
 end
