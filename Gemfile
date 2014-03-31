@@ -11,4 +11,18 @@ group :test do
   gem 'rspec-rails', '~> 2.14.0'
 end
 
+group :development, :test do
+  gem 'zeus', require: false
+end
+
+group :development do
+  gem 'annotate', '>=2.6.0'
+  unless ENV['RM_INFO']
+    gem 'pry-debugger'
+    gem 'pry-rails'
+    gem 'pry-rescue'
+    gem 'pry-stack_explorer'
+  end
+end
+
 gemspec
