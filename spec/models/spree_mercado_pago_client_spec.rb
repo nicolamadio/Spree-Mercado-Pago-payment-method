@@ -116,12 +116,16 @@ describe SpreeMercadoPagoClient do
     end
 
     context 'on failure' do
-      before(:each) do
 
-        response = double('response')
-        response.stub(:code).and_return(200, 400)
-        response.stub(:to_str) { {some_fake_data: 'irrelevant'}.to_json }
-        RestClient.should_receive(:post).exactly(2).times { response }
+      before(:each) do
+        RestClient.should_receive(:post).exactly(2).times do
+          if not @is_second_time
+            @is_second_time = true
+            "{}"
+          else
+            raise RestClient::Exception.new "foo"
+          end
+        end
         client.authenticate
       end
 
