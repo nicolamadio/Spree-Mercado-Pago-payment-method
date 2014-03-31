@@ -44,9 +44,11 @@ describe SpreeMercadoPagoClient do
         response
         }
       let(:js_response) {ActiveSupport::JSON.decode(http_response)}
+
       before(:each) do
         expect(RestClient).to receive(:post).and_return( http_response )
       end
+
 
       it 'returns a response object' do
         expect(client.authenticate).to eq(js_response)
@@ -71,7 +73,9 @@ describe SpreeMercadoPagoClient do
         response
       end
 
-      before { RestClient.should_receive(:post) { bad_request_response } }
+      before(:each) do  
+        RestClient.should_receive(:post) { raise RestClient::Exception.new "foo" }
+      end
 
       it 'raise exception on invalid authentication' do
         expect { client.authenticate }.to raise_error(MercadoPagoException) do |error|
