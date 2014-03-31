@@ -17,7 +17,7 @@ describe SpreeMercadoPagoClient do
   let(:url_callbacks) { {success: 'url', failure: 'url', pending: 'url'} }
   
   let(:payment_method) { double :payment_method, id: 1, preferred_client_id: 'app id', preferred_client_secret: 'app secret' }
-  let(:payment) {double :payment, payment_method:payment_method, id:1 }
+  let(:payment) {double :payment, payment_method:payment_method, id:1, identifier:"fruta" }
   let(:login_json_response)  do
     File.open("#{SPEC_ROOT}/fixtures/authenticated.json", 'r').read
   end
