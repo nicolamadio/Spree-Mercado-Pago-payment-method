@@ -85,7 +85,7 @@ describe Spree::MercadoPagoController do
         stub_request(:get, "https://api.mercadolibre.com/sandbox/collections/search?external_reference=#{another_payment.identifier}&access_token=#{access_token}&").
         with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip, deflate', 'Content-Type' => 'application/x-www-form-urlencoded', 'User-Agent' => 'Ruby'}).
         to_return(:status => 200, :body => mercado_pago_search_response.to_json, :headers => {})
-        spree_get :pending, {external_reference: another_external_reference}
+        spree_get :pending, {external_reference: another_payment.identifier}
       end
       context 'with valid order' do
         include_context 'another order'
@@ -99,7 +99,7 @@ describe Spree::MercadoPagoController do
       context 'with invalid order' do
         include_context 'another order'
         before do
-          spree_get :success, {external_reference: another_external_reference}
+          spree_get :success, {external_reference: another_payment.identifier}
         end
         before { spree_get :pending }
 
