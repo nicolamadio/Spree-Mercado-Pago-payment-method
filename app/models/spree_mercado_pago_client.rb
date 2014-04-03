@@ -39,7 +39,12 @@ class SpreeMercadoPagoClient
 
   def get_payment_status(external_reference)
     response = send_search_request({:external_reference => external_reference, :access_token => access_token})
-    response['results'][0]['collection']['status']
+
+    if response['results'].empty?
+      "pending"
+    else
+      response['results'][0]['collection']['status']
+    end
   end
 
   private
