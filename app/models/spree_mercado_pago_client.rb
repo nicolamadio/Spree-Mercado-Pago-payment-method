@@ -1,6 +1,6 @@
 # -*- encoding : utf-8 -*-
 require 'rest_client'
-
+require 'client_authentication'
 
 class MercadoPagoException < Exception
 end
@@ -12,6 +12,7 @@ class SpreeMercadoPagoClient
   include ActionView::Helpers::SanitizeHelper
   include Spree::ProductsHelper
 
+  include Authentication
   attr_reader :errors
   attr_reader :auth_response
   attr_reader :preferences_response
@@ -22,13 +23,7 @@ class SpreeMercadoPagoClient
     @errors = []
   end
 
-  def authenticate
-    response = send_authentication_request
-    @auth_response = ActiveSupport::JSON.decode(response)
-  rescue RestClient::Exception => e
-    @errors << I18n.t(:mp_authentication_error)
-    raise MercadoPagoException.new e.message
-  end
+
 
   def create_preference(order, payment, success_callback,
       pending_callback, failure_callback)
@@ -60,13 +55,6 @@ class SpreeMercadoPagoClient
 
   private
 
-  def send_authentication_request
-    RestClient.post(
-        'https://api.mercadolibre.com/oauth/token',
-        {:grant_type => 'client_credentials', :client_id => client_id, :client_secret => client_secret},
-        :content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'
-    )
-  end
 
   def send_preferences_request(options)
     RestClient.post(preferences_url(access_token), options.to_json,
@@ -113,14 +101,6 @@ class SpreeMercadoPagoClient
     uri = URI(url)
     uri.query = URI.encode_www_form(params)
     uri.to_s
-  end
-
-  def client_id
-    @payment_method.preferred_client_id
-  end
-
-  def client_secret
-    @payment_method.preferred_client_secret
   end
 
   def preferences_url(token)
