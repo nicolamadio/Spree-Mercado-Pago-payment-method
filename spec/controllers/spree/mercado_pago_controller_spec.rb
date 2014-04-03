@@ -16,6 +16,8 @@ shared_context 'another order' do
 end
 
 describe Spree::MercadoPagoController do
+  let(:access_token) {"123456"}
+
   it "doesn't affect current order if there is one (session[:order_id])"
 
   context 'Logged out user' do
@@ -24,24 +26,32 @@ describe Spree::MercadoPagoController do
 
   context 'Logged in user' do
     include_context 'logged user'
-    before :each do
-      WebMock.disable_net_connect!(:allow_localhost => true)
-      stub_request(:post, 'https://api.mercadolibre.com/oauth/token').to_return(:status => 200, :body => {access_token: 123546}.to_json, :headers => {})
-      stub_request(:get, "https://api.mercadolibre.com/sandbox/collections/search?access_token=123546&external_reference=#{payment.identifier}").
-          with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip, deflate', 'Content-Type' => 'application/x-www-form-urlencoded', 'User-Agent' => 'Ruby'}).
-          to_return(:status => 200, :body => mercado_pago_seach_response.to_json, :headers => {})
-    end
+
 
     let(:payment_method) { create(:mercado_pago_payment_method) }
     let(:order) { Spree::Order.create(user: user, state: 'payment') }
     let(:payment) { create(:payment, payment_method: payment_method, order: order) }
-    let(:mercado_pago_seach_response) { {results: [{collection: {}}]} }
+    let(:mercado_pago_search_response) { {results: [{collection: {}}]} }
     let(:client) { double(:client) }
+    let(:external_reference) {payment.identifier}
+
+
+
+    let(:search_url) { "https://api.mercadolibre.com/sandbox/collections/search?access_token=#{access_token}&external_reference=#{external_reference}" }
+    before :each do
+      WebMock.disable_net_connect!(:allow_localhost => true)
+      stub_request(:post, 'https://api.mercadolibre.com/oauth/token').to_return(:status => 200, :body => {access_token: access_token}.to_json, :headers => {})
+
+      stub_request(:get, /https:\/\/api.mercadolibre.com\/sandbox\/collections\/search.*/).to_return(:status => 200, :body => mercado_pago_search_response.to_json, :headers => {})
+    end
+
+
+
 
     describe '#success' do
       context 'spectate contributors calls' do
         before(:each) do
-          allow(subject).to receive(:params).and_return(external_reference: payment.identifier)
+          allow(subject).to receive(:params).and_return(external_reference: external_reference)
           allow(subject).to receive(:current_order).and_return(order)
           allow(subject).to receive(:current_payment).and_return(payment)
           allow(client).to receive(:check_payment_status).and_return(payment)
@@ -50,7 +60,7 @@ describe Spree::MercadoPagoController do
         it { expect(subject).to receive('create_client').and_return(client) }
 
         after(:each) do
-          spree_get :success, {external_reference: payment.identifier}
+          spree_get :success, {external_reference: external_reference}
         end
 
       end
@@ -59,7 +69,7 @@ describe Spree::MercadoPagoController do
       context 'with valid order' do
 
         before do
-          spree_get :success, {external_reference: payment.identifier}
+          spree_get :success, {external_reference: external_reference}
         end
 
         it { response.should be_success }
@@ -72,10 +82,10 @@ describe Spree::MercadoPagoController do
 
     describe '#pending' do
       before :each do
-        stub_request(:get, "https://api.mercadolibre.com/sandbox/collections/search?external_reference=#{another_payment.id}&access_token=123546&").
+        stub_request(:get, "https://api.mercadolibre.com/sandbox/collections/search?external_reference=#{another_payment.identifier}&access_token=#{access_token}&").
         with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip, deflate', 'Content-Type' => 'application/x-www-form-urlencoded', 'User-Agent' => 'Ruby'}).
-        to_return(:status => 200, :body => mercado_pago_seach_response.to_json, :headers => {})
-        spree_get :pending, {external_reference: another_payment.identifier}
+        to_return(:status => 200, :body => mercado_pago_search_response.to_json, :headers => {})
+        spree_get :pending, {external_reference: another_external_reference}
       end
       context 'with valid order' do
         include_context 'another order'
@@ -89,7 +99,7 @@ describe Spree::MercadoPagoController do
       context 'with invalid order' do
         include_context 'another order'
         before do
-          spree_get :success, {external_reference: another_payment.identifier}
+          spree_get :success, {external_reference: another_external_reference}
         end
         before { spree_get :pending }
 
@@ -101,7 +111,7 @@ describe Spree::MercadoPagoController do
     describe '#failure' do
       context 'with valid order' do
         before do
-          spree_get :failure, {external_reference: payment.identifier}
+          spree_get :failure, {external_reference: external_reference}
         end
 
         it { response.should be_success }
