@@ -22,6 +22,12 @@ require 'spree/testing_support/authorization_helpers'
 require 'spree/testing_support/url_helpers'
 
 
+# Rails engines something like this to make Factory Girl work
+
+Dir[File.join(File.dirname(__FILE__), 'factories/**/*.rb')].each { |f| require f }
+
+
+
 RSpec.configure do |config|
   config.include FactoryGirl::Syntax::Methods
   config.include Spree::TestingSupport::UrlHelpers
