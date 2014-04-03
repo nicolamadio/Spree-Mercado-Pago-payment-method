@@ -32,7 +32,7 @@ describe Spree::MercadoPagoController do
           to_return(:status => 200, :body => mercado_pago_seach_response.to_json, :headers => {})
     end
 
-    let(:payment_method) { create(:payment_method, type: 'PaymentMethod::MercadoPago') }
+    let(:payment_method) { create(:mercado_pago_payment_method) }
     let(:order) { Spree::Order.create(user: user, state: 'payment') }
     let(:payment) { create(:payment, payment_method: payment_method, order: order) }
     let(:mercado_pago_seach_response) { {results: [{collection: {}}]} }
