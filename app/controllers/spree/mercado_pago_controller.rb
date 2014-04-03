@@ -71,7 +71,7 @@ module Spree
     end
 
     def payment_method
-      @payment_method ||= PaymentMethod::MercadoPago.find! (params[:payment_method_id])
+      @payment_method ||= ::PaymentMethod::MercadoPago.find (params[:payment_method_id])
     end
 
     def provider
