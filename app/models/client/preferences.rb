@@ -41,5 +41,12 @@ class SpreeMercadoPagoClient
       end
       options
     end
+
+
+
+    def send_preferences_request(options)
+      RestClient.post(preferences_url(access_token), options.to_json,
+                    :content_type => 'application/json', :accept => 'application/json')
+    end
   end
 end
