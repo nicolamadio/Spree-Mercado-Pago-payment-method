@@ -34,7 +34,6 @@ module Spree
 
     def failure
       render_result :failure
-      flash[:error] = I18n.t(:mp_invalid_order)
     end
 
     # "Mercado Pago" IPN
