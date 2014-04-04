@@ -46,7 +46,13 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
     status = provider.get_payment_status payment.identifier
 
     if payment.pending? and not pending?(status)
-      payment.capture!
+      # When the capture is not success, the payment raises a Core::GatewayError exception
+      # See spree_core/app/models/spree/payment/processing.rb:156
+      begin
+        payment.capture!
+      rescue ::Spree::Core::GatewayError => e
+        Rails.logger.error e.message
+      end
     end
   end
 
