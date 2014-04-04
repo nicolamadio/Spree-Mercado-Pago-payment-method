@@ -39,6 +39,13 @@ class SpreeMercadoPagoClient
         options[:items] << h
 
       end
+
+      options[:items] << {
+          :title => 'Costo de envío',
+          :unit_price => order.ship_total.to_f,
+          :quantity => 1,
+          :currency_id => 'ARS'
+      }
       options
     end
 
