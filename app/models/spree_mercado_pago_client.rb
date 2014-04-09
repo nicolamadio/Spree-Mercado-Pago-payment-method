@@ -58,7 +58,7 @@ class SpreeMercadoPagoClient
   end
 
   def send_notification_request(mercado_pago_id)
-    url = create_url(notifications_url(mercado_pago_id), access_token: @auth_response['access_token'])
+    url = create_url(notifications_url(mercado_pago_id), access_token: access_token)
     options = {:content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'}
     get(url, options, quiet: true)
   end
@@ -69,11 +69,6 @@ class SpreeMercadoPagoClient
     get(url, options)
   end
 
-  def access_token
-    unless @auth_response
-      authenticate
-    end
-    @auth_response['access_token']
-  end
+
 
 end

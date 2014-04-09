@@ -27,5 +27,12 @@ class SpreeMercadoPagoClient
       @payment_method.preferred_client_secret
     end
 
+    def access_token
+      unless @auth_response
+        authenticate
+      end
+      @auth_response['access_token']
+    end
+
   end
 end
