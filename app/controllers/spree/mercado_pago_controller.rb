@@ -61,7 +61,7 @@ module Spree
         redirect_to_state :success
       end
       if failed_payment? and current_state != :failure
-        redirect_to_state :failed
+        redirect_to_state :failure
       end
       if pending_payment? and current_state != :pending
         redirect_to_state :pending
