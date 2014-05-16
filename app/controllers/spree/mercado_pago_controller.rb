@@ -46,8 +46,12 @@ module Spree
 
       if external_reference
         puts "Processing payment for #{external_reference}"
-        payment = current_payment external_reference
-        process_payment payment
+	payment = current_payment external_reference
+        if payment
+          process_payment payment
+        else
+          puts "Ignoring payment #{external_reference}. Payment not found!"
+        end
       end
 
       render status: :ok, nothing: true
@@ -78,7 +82,7 @@ module Spree
     end
 
     def current_payment(external_reference=params[:external_reference])
-      @current_payment ||= Spree::Payment.find_by! identifier: external_reference
+      @current_payment ||= Spree::Payment.find_by identifier: external_reference
     end
 
     def success_order?
