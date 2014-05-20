@@ -10,14 +10,11 @@ module Spree
 
     # If the order is in 'payment' state, redirects to Mercado Pago Checkout page
     def payment
-      mp_payment = current_order.payments.create!({:source => payment_method,
-                                                   :amount => current_order.total,
-                                                   :payment_method => @payment_method})
+      mp_payment = current_order.payments.create! source: payment_method,
+        amount: current_order.total,
+        payment_method: @payment_method
 
-      back_urls = get_back_urls
-
-      if provider.create_preferences(current_order, mp_payment,
-                                    back_urls[:success], back_urls[:pending], back_urls[:failure])
+      if create_preferences(mp_payment)
         redirect_to provider.redirect_url
       else
         render 'spree/checkout/mercado_pago_error'
@@ -58,6 +55,11 @@ module Spree
     end
 
     private
+
+    def create_preferences(mp_payment)
+      back_urls = get_back_urls
+      provider.create_preferences(current_order, mp_payment, callback_urls)
+    end
 
     def render_result(current_state)
       process_payment current_payment
