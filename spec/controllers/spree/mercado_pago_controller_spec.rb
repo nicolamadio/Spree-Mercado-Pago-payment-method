@@ -120,12 +120,6 @@ describe Spree::MercadoPagoController do
         it { assigns(:current_order).payment_state.should be_nil }
       end
 
-      context 'with invalid order' do
-        include_context 'another order'
-        before { spree_get :failure, {external_reference: create(:payment, payment_method: payment_method, order: another_order).identifier} }
-
-        it { flash[:error].should eq(I18n.t(:mp_invalid_order)) }
-      end
     end
   end
 end

@@ -134,7 +134,7 @@ describe SpreeMercadoPagoClient do
       end
 
       it 'throws exception and populate errors' do
-        expect {client.create_preference(order, payment, url_callbacks[:success], url_callbacks[:pending], url_callbacks[:failure])}.to raise_error(MercadoPagoException) do |variable|
+        expect {client.create_preferences(order, payment, url_callbacks[:success], url_callbacks[:pending], url_callbacks[:failure])}.to raise_error(MercadoPagoException) do |variable|
           client.errors.should include(I18n.t(:mp_authentication_error))
         end
       end
