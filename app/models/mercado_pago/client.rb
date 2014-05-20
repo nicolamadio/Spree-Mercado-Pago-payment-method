@@ -9,9 +9,6 @@ module MercadoPago
 class Client
   # These three includes are because of the user of line_item_description from
   # ProductsHelper
-  include ActionView::Helpers::TextHelper
-  include ActionView::Helpers::SanitizeHelper
-  include Spree::ProductsHelper
 
   include Authentication
   include Preferences
