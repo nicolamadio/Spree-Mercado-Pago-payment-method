@@ -1,7 +1,7 @@
 class SpreeMercadoPagoClient
   module Preferences
 
-    def create_preference(order, payment, success_callback,
+    def create_preferences(order, payment, success_callback,
         pending_callback, failure_callback)
       options = create_preference_options order, payment, success_callback,
                                           pending_callback, failure_callback

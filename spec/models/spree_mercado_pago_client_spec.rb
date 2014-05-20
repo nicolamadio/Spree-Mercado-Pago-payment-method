@@ -13,7 +13,7 @@ describe SpreeMercadoPagoClient do
   end
 
 
-  let(:order) { double('order', :payment_method => payment_method, :number => 'testorder', :line_items => []) }
+  let(:order) { double('order', payment_method: payment_method, number: 'testorder', line_items: [], ship_total: 1000) }
   let(:url_callbacks) { {success: 'url', failure: 'url', pending: 'url'} }
   
   let(:payment_method) { double :payment_method, id: 1, preferred_client_id: 'app id', preferred_client_secret: 'app secret' }
@@ -95,7 +95,7 @@ describe SpreeMercadoPagoClient do
     end
   end
 
-  describe '#create_preference' do
+  describe '#create_preferences' do
 
     context 'On success' do
       before(:each) do
@@ -108,12 +108,12 @@ describe SpreeMercadoPagoClient do
       end
 
       it 'return value should not be nil' do
-        response = client.create_preference order, payment, url_callbacks[:success], url_callbacks[:pending], url_callbacks[:failure]
+        response = client.create_preferences order, payment, url_callbacks[:success], url_callbacks[:pending], url_callbacks[:failure]
         response.should_not be_nil
       end
 
       it '#redirect_url returns offsite checkout url' do
-        client.create_preference order, payment, url_callbacks[:success], url_callbacks[:pending], url_callbacks[:failure]
+        client.create_preferences order, payment, url_callbacks[:success], url_callbacks[:pending], url_callbacks[:failure]
         client.redirect_url.should be_present
         client.redirect_url.should eq('https://www.mercadopago.com/checkout/pay?pref_id=identificador_de_la_preferencia')
       end

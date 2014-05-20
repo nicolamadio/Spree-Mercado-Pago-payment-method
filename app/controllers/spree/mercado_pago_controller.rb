@@ -16,7 +16,7 @@ module Spree
 
       back_urls = get_back_urls
 
-      if provider.create_preference(current_order, mp_payment,
+      if provider.create_preferences(current_order, mp_payment,
                                     back_urls[:success], back_urls[:pending], back_urls[:failure])
         redirect_to provider.redirect_url
       else
