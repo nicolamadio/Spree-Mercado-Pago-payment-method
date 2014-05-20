@@ -1,4 +1,4 @@
-class SpreeMercadoPagoClient
+class MercadoPago::Client
   module Preferences
 
     def create_preferences(order, payment, success_callback,
@@ -9,7 +9,7 @@ class SpreeMercadoPagoClient
       @preferences_response = ActiveSupport::JSON.decode(response)
     rescue RestClient::Exception => e
       @errors << I18n.t(:mp_authentication_error)
-      raise MercadoPagoException.new e.message
+      raise RuntimeError.new e.message
     end
 
   private

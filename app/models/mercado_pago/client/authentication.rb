@@ -1,11 +1,11 @@
-class SpreeMercadoPagoClient
+class MercadoPago::Client
   module Authentication
     def authenticate
       response = send_authentication_request
       @auth_response = ActiveSupport::JSON.decode(response)
     rescue RestClient::Exception => e
       @errors << I18n.t(:mp_authentication_error)
-      raise MercadoPagoException.new e.message
+      raise RuntimeError.new e.message
     end
 
 

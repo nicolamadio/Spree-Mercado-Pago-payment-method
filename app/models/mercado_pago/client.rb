@@ -1,13 +1,12 @@
 # -*- encoding : utf-8 -*-
 require 'rest_client'
-require 'client/authentication'
-require 'client/preferences'
-require 'client/api'
+require 'mercado_pago/client/authentication'
+require 'mercado_pago/client/preferences'
+require 'mercado_pago/client/api'
 
-class MercadoPagoException < Exception
-end
+module MercadoPago
 
-class SpreeMercadoPagoClient
+class Client
   # These three includes are because of the user of line_item_description from
   # ProductsHelper
   include ActionView::Helpers::TextHelper
@@ -68,7 +67,6 @@ class SpreeMercadoPagoClient
     options = {:content_type => 'application/x-www-form-urlencoded', :accept => 'application/json'}
     get(url, options)
   end
-
-
+end
 
 end

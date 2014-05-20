@@ -14,7 +14,7 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
   end
 
   def provider_class
-    SpreeMercadoPagoClient
+    MercadoPago::Client
   end
 
   def provider(additional_options={})
