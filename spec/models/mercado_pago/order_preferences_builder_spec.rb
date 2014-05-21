@@ -39,7 +39,7 @@ describe "OrderPreferencesBuilder" do
       expect(subject).to include(:items)
       order.line_items.each do |line_item|
         expect(subject[:items]).to include({
-          title: line_item_description_text(line_item.variant.product.description),
+          title: line_item_description_text(line_item.variant.product.name),
           unit_price: line_item.price.to_f,
           quantity: line_item.quantity.to_f,
           currency_id: "ARS"
@@ -49,7 +49,7 @@ describe "OrderPreferencesBuilder" do
 
     it "should set its adjustments as items" do
       expect(subject[:items]).to include({
-        title: adjustment.label, 
+        title: line_item_description_text(adjustment.label), 
         unit_price: adjustment.amount.to_f,
         quantity: 1,
         currency_id: "ARS"
