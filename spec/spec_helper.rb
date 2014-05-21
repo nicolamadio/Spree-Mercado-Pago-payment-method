@@ -2,12 +2,10 @@ require 'rubygems'
 require 'webmock/rspec'
 require 'webmock/api'
 # Configure Rails Environment
-
-ENV['RAILS_ENV'] = 'test'
-
 require File.expand_path('../dummy/config/environment.rb',  __FILE__)
 
 require 'rspec/rails'
+require 'rspec/autorun'
 require 'ffaker'
 
 
@@ -36,7 +34,9 @@ RSpec.configure do |config|
 
   config.mock_with :rspec
   config.color = true
-  config.use_transactional_fixtures = false
+  config.use_transactional_fixtures = true
 
   config.fail_fast = ENV['FAIL_FAST'] || false
+
+  config.order = "random"
 end

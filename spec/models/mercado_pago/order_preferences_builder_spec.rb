@@ -1,8 +1,8 @@
+require 'spec_helper'
+
 describe "OrderPreferencesBuilder" do
-  
 
-  let!(:order) { order = create :order_with_line_items }
-
+  let(:order) { order = create :order_with_line_items }
   let!(:adjustment) { create :adjustment, adjustable:order, amount:-500.0, label: "Descuento"}
   let(:payment) { create :payment }
   let(:callback_urls) { {success:"http://example.com/success", pending:"http://example.com/pending", failure: "http://example.com/failure" }}
