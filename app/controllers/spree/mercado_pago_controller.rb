@@ -57,7 +57,7 @@ module Spree
     private
 
     def create_preferences(mp_payment)
-      preferences = create_preference_options(current_order, mp_payment, back_urls)
+      preferences = create_preference_options(current_order, mp_payment, get_back_urls)
       provider.create_preferences(preferences)
     end
 
