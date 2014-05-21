@@ -58,6 +58,8 @@ module Spree
 
     def create_preferences(mp_payment)
       preferences = create_preference_options(current_order, mp_payment, get_back_urls)
+      Rails.logger.info "Sending preferences to MercadoPago"
+      Rails.logger.info "#{preferences}"
       provider.create_preferences(preferences)
     end
 
