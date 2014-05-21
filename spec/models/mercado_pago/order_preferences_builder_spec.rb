@@ -2,8 +2,16 @@ require 'spec_helper'
 
 describe "OrderPreferencesBuilder" do
 
-  let(:order) { order = create :order_with_line_items }
-  let!(:adjustment) { create :adjustment, adjustable:order, amount:-500.0, label: "Descuento"}
+  # Factory order_with_line_items is incredibly slow..
+  let(:order) do
+    order = create :order
+    create_list :line_item, 2, order:order
+    order.line_items.reload
+    order.update!
+    order
+  end
+
+  let!(:adjustment) { order.adjustments.create! label:"Descuento", amount:-10.0}
   let(:payment) { create :payment }
   let(:callback_urls) { {success:"http://example.com/success", pending:"http://example.com/pending", failure: "http://example.com/failure" }}
   let(:payer_data) { {email:"jmperez@devartis.com"}}
