@@ -46,6 +46,8 @@ class SpreeMercadoPagoClient
           :quantity => 1,
           :currency_id => 'ARS'
       }
+
+      Rails.logger.info "Preferences sent to MP: #{options}"
       options
     end
 

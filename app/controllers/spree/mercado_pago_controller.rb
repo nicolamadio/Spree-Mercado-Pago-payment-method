@@ -46,7 +46,7 @@ module Spree
 
       if external_reference
         puts "Processing payment for #{external_reference}"
-	payment = current_payment external_reference
+        payment = current_payment external_reference
         if payment
           process_payment payment
         else
@@ -81,8 +81,9 @@ module Spree
       @provider ||= payment_method.provider({:payer => payer_data})
     end
 
-    def current_payment(external_reference=params[:external_reference])
-      @current_payment ||= Spree::Payment.find_by identifier: external_reference
+    def current_payment(payment_identifier=nil)
+      payment_identifier ||= external_reference
+      @current_payment ||= Spree::Payment.find_by identifier: payment_identifier
     end
 
     def success_order?
@@ -115,7 +116,11 @@ module Spree
     end
 
     def external_reference
-      params[:external_reference]
+      if params[:external_reference] != "null"
+        params[:external_reference]
+      else
+        params[:payment_identifier]
+      end
     end
 
     # Get email for using in Mercado Pago request
@@ -128,14 +133,19 @@ module Spree
 
     # Get urls callbacks.
     # If the current 'payment method' haven't any callback, the default will be used
-    def get_back_urls
+    def get_back_urls(mp_payment)
       success_url = payment_method.preferred_success_url
       pending_url = payment_method.preferred_pending_url
       failure_url = payment_method.preferred_failure_url
 
-      success_url = spree.mercado_pago_success_url(order_number: current_order.number) if success_url.empty?
-      pending_url = spree.mercado_pago_pending_url(order_number: current_order.number) if pending_url.empty?
-      failure_url = spree.mercado_pago_failure_url(order_number: current_order.number) if failure_url.empty?
+      get_params = {
+        order_number: current_order.number, 
+        payment_identifier: mp_payment.identifier
+      }
+
+      success_url = spree.mercado_pago_success_url(get_params) if success_url.empty?
+      pending_url = spree.mercado_pago_pending_url(get_params) if pending_url.empty?
+      failure_url = spree.mercado_pago_failure_url(get_params) if failure_url.empty?
 
       {
           success: success_url,
@@ -145,7 +155,6 @@ module Spree
     end
 
     def verify_external_reference
-      external_reference = params[:external_reference]
       unless external_reference
         flash[:error] = I18n.t(:mp_invalid_order)
         redirect_to root_path
