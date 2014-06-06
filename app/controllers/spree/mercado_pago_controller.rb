@@ -22,10 +22,12 @@ module Spree
     end
 
     def pending
+      process_payment current_payment
       render_result :pending
     end
 
     def success
+      process_payment current_payment
       render_result :success
     end
 
@@ -73,7 +75,6 @@ module Spree
 
 
     def render_result(current_state)
-      process_payment current_payment
       if success_order? and current_state != :success
         redirect_to_state :success
       end
@@ -83,7 +84,6 @@ module Spree
       if pending_payment? and current_state != :pending
         redirect_to_state :pending
       end
-
     end
 
     def payment_method
@@ -116,10 +116,11 @@ module Spree
     end
 
     def process_payment(payment)
-      order = payment.order
-      order.next
-      payment.reload
       payment_method.try_capture payment
+      unless payment.failed?
+        order = payment.order
+        order.next
+      end
     end
 
     # Get payer info for sending within Mercado Pago request
@@ -152,7 +153,7 @@ module Spree
       failure_url = payment_method.preferred_failure_url
 
       get_params = {
-        order_number: current_order.number, 
+        order_number: current_order.number,
         payment_identifier: mp_payment.identifier
       }
 
