@@ -21,39 +21,34 @@ module Spree
       end
     end
 
+    # "Mercado Pago" IPN
+    def notification
+      # TODO: FIXME. This is not the best way. What happens with multiples MercadoPago payments?
+      @payment_method = ::PaymentMethod::MercadoPago.first
+      external_reference = provider.get_external_reference params[:id]
+
+      if external_reference
+        payment = current_payment external_reference
+        Resque.enqueue(PaymentStatusVerifier, payment.identifier) if payment
+      end
+
+      render status: :ok, nothing: true
+    end
+
     def pending
-      process_payment current_payment
+      order.next! unless order.complete?
+      Resque.enqueue(PaymentStatusVerifier, current_payment.identifier)
       render_result :pending
     end
 
     def success
-      process_payment current_payment
+      order.next! unless order.complete?
+      Resque.enqueue(PaymentStatusVerifier, current_payment.identifier)
       render_result :success
     end
 
     def failure
       render_result :failure
-    end
-
-    # "Mercado Pago" IPN
-    def notification
-      # TODO: FIXME. This is not the best way. What happens with multiples MercadoPago payments?
-      # TODO: Log all IPN messages
-      @payment_method = ::PaymentMethod::MercadoPago.first
-
-      external_reference = provider.get_external_reference params[:id]
-
-      if external_reference
-        puts "Processing payment for #{external_reference}"
-        payment = current_payment external_reference
-        if payment
-          process_payment payment
-        else
-          puts "Ignoring payment #{external_reference}. Payment not found!"
-        end
-      end
-
-      render status: :ok, nothing: true
     end
 
     private
@@ -113,14 +108,6 @@ module Spree
 
     def redirect_to_state(status)
       redirect_to controller: 'spree/mercado_pago', action: status, external_reference: external_reference
-    end
-
-    def process_payment(payment)
-      payment_method.try_capture payment
-      unless payment.failed?
-        order = payment.order
-        order.next
-      end
     end
 
     # Get payer info for sending within Mercado Pago request

@@ -30,6 +30,10 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
     false
   end
 
+  def payment_source_class
+    nil
+  end
+
   def authorize(amount, source, gateway_options)
     status = provider.get_payment_status identifier(gateway_options[:order_id])
     success = !failed?(status)
@@ -49,11 +53,17 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
       # When the capture is not success, the payment raises a Core::GatewayError exception
       # See spree_core/app/models/spree/payment/processing.rb:156
       begin
+        payment.order.next if success?(status)
         payment.capture!
       rescue ::Spree::Core::GatewayError => e
         Rails.logger.error e.message
       end
     end
+  end
+
+  def payment_approved?(payment)
+    status = provider.get_payment_status payment.identifier
+    approved?(status)
   end
 
   def can_void?(payment)
@@ -62,14 +72,6 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
 
   def can_capture?(payment)
     payment.pending? || payment.checkout?
-  end
-
-  def source_required?
-    true
-  end
-
-  def payment_source_class
-    nil
   end
 
   private
