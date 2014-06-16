@@ -48,6 +48,7 @@ module Spree
     end
 
     def failure
+      Resque.enqueue(PaymentStatusVerifier, current_payment.identifier)
       render_result :failure
     end
 
