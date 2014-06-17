@@ -53,7 +53,6 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
       # When the capture is not success, the payment raises a Core::GatewayError exception
       # See spree_core/app/models/spree/payment/processing.rb:156
       begin
-        payment.order.next if success?(status)
         payment.capture!
       rescue ::Spree::Core::GatewayError => e
         Rails.logger.error e.message
