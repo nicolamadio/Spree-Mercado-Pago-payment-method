@@ -95,6 +95,10 @@ module Spree
       @current_payment ||= Spree::Payment.find_by identifier: payment_identifier
     end
 
+    def order
+      current_payment.order
+    end
+
     def success_order?
       current_payment.completed? and current_payment.order.completed?
     end
