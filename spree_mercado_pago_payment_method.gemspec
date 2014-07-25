@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.homepage    = 'https://github.com/manuca/Spree-Mercado-Pago-payment-method'
   s.email       = 'manuca@gmail.com'
 
-  s.add_dependency 'spree_core', '~> 2.1.0'
+  s.add_dependency 'spree_core', '~> 2.2'
   s.add_dependency 'rest-client'
 
   s.add_development_dependency 'capybara', '1.1.2'
