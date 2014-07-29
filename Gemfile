@@ -1,6 +1,9 @@
 source 'http://rubygems.org'
 
-gem 'spree', :github => 'spree/spree', :branch => '2-2-stable'
+gem 'rails', '~> 4.0.6'
+
+gem 'spree_core', :github => 'spree/spree', :branch => '2-2-stable'
+gem 'spree_frontend', :github => 'spree/spree', :branch => '2-2-stable'
 gem 'spree_auth_devise', :git => 'https://github.com/spree/spree_auth_devise.git', :branch => '2-2-stable'
 
 
@@ -14,6 +17,7 @@ end
 group :development, :test do
   gem 'zeus', require: false
   gem 'sqlite3'
+  gem 'ffaker'
   gem 'factory_girl'
   gem 'factory_girl_rails'
 end
