@@ -9,9 +9,9 @@ Gem::Specification.new do |s|
   s.homepage    = 'https://github.com/manuca/Spree-Mercado-Pago-payment-method'
   s.email       = 'manuca@gmail.com'
 
-  s.add_dependency 'rails', '~> 4.0.6'
+  s.add_dependency 'rails', '~> 4.1.2'
 
-  s.add_dependency 'spree_core', '~> 2.2'
+  s.add_dependency 'spree_core', '~> 2.3.0'
   s.add_dependency 'rest-client'
 
   s.test_files = Dir["spec/**/*"]
