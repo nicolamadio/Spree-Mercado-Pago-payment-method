@@ -6,7 +6,7 @@ shared_context 'logged user' do
   let(:user) { create(:user) }
   before(:each) do
     controller.stub(:spree_current_user => user)
-    session[:order_id] = order.id
+    session[:order_number] = order.number
   end
 end
 
