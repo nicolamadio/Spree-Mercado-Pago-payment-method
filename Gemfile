@@ -1,7 +1,10 @@
 source 'http://rubygems.org'
 
-gem 'spree', '~> 2.1.0'
-gem 'spree_auth_devise', :git => 'https://github.com/spree/spree_auth_devise.git', :branch => '2-1-stable'
+
+gem 'spree_i18n', github: 'spree/spree_i18n', branch: '2-3-stable'
+
+gem 'spree', '~> 2.3.1'
+gem 'spree_auth_devise', :git => 'https://github.com/spree/spree_auth_devise.git', :branch => '2-3-stable'
 
 
 group :test do
