@@ -1,9 +1,7 @@
 Spree Mercado Pago Payment Method
 =================================
 
-Integration of Mercado Pago with Spree 1.3
-
-(Spree 1.2 users please check spree-1.2 branch)
+Integration of Mercado Pago with Spree 2.3.1 for Venezuela
 
 Installation
 ------------
@@ -11,7 +9,7 @@ Installation
 Add this line to your Gemfile (Ruby 1.8 users note 1.9 style hash):
 
 ```
-gem 'spree_mercado_pago_payment_method', git: "git@github.com:manuca/Spree-Mercado-Pago-payment-method.git"
+gem 'spree_mercado_pago_payment_method', :git => "https://github.com/YACFirm/Spree-Mercado-Pago-payment-method.git" 
 ```
 
 Usage
