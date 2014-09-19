@@ -35,6 +35,7 @@ class Client
 
   def get_payment_status(external_reference)
     response = send_search_request({:external_reference => external_reference, :access_token => access_token})
+    puts response
 
     if response['results'].empty?
       "pending"
