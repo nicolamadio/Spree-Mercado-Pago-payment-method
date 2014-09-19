@@ -44,6 +44,7 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
 
   def try_capture payment
     status = provider.get_payment_status payment.identifier
+    puts status
 
     if (payment.pending? or payment.checkout?) and not pending?(status)
       # When the capture is not success, the payment raises a Core::GatewayError exception
@@ -79,7 +80,7 @@ class PaymentMethod::MercadoPago < Spree::PaymentMethod
   end
 
   def approved?(status)
-    status == 'approved'
+    status == 'approved' or status == 'pending'
   end
 
 end
