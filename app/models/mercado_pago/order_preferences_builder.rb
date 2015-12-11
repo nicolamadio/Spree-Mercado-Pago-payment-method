@@ -4,11 +4,11 @@ module MercadoPago
     include ActionView::Helpers::SanitizeHelper
     include Spree::ProductsHelper
 
-    def initialize(order, payment, callback_urls, payer_data=nil)
-      @order = order
-      @payment = payment
+    def initialize(order, payment, callback_urls, payer_data = nil)
+      @order         = order
+      @payment       = payment
       @callback_urls = callback_urls
-      @payer_data = payer_data
+      @payer_data    = payer_data
     end
 
     def preferences_hash
@@ -20,16 +20,27 @@ module MercadoPago
       }
     end
 
-
-  private
+    private
 
     def generate_items
       items = []
 
       items += generate_items_from_line_items
       items += generate_items_from_adjustments
+      items += generate_items_from_shipments
 
       items
+    end
+
+    def generate_items_from_shipments
+      @order.shipments.collect do |shipment|
+        {
+          :title => shipment.shipping_method.name,
+          :unit_price => shipment.cost.to_f,
+          :quantity => 1,
+          :currency_id => 'ARS'
+        }
+      end
     end
 
     def generate_items_from_line_items
@@ -44,7 +55,7 @@ module MercadoPago
     end
 
     def generate_items_from_adjustments
-      @order.adjustments.collect do |adjustment|
+      @order.adjustments.eligible.collect do |adjustment|
         {
           title: line_item_description_text(adjustment.label),
           unit_price: adjustment.amount.to_f,
@@ -55,3 +66,4 @@ module MercadoPago
     end
   end
 end
+
